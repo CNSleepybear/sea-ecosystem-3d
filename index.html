@@ -1,0 +1,2455 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>海底生态系统生成器</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            overflow: hidden; 
+            background: #000814; 
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+        #sea3dCanvas { position: fixed; top: 0; left: 0; }
+        
+        /* 信息面板 */
+        #info { 
+            position: absolute; 
+            top: 10px; left: 10px; 
+            color: white; 
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            z-index: 100; font-size: 13px;
+            background: rgba(0,20,40,0.7);
+            padding: 15px 18px;
+            border-radius: 12px;
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(100,180,255,0.25);
+            max-width: 280px;
+            transition: all 0.3s ease;
+        }
+        #info:hover {
+            background: rgba(0,25,50,0.85);
+            border-color: rgba(100,200,255,0.4);
+        }
+        #info h3 { 
+            margin-bottom: 10px; 
+            color: #64ddff; 
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        #info .controls {
+            font-size: 12px;
+            line-height: 1.6;
+            color: rgba(255,255,255,0.85);
+        }
+        #info .controls span {
+            color: #88ccff;
+            font-weight: 500;
+        }
+        
+        /* 性能监控面板 */
+        #performance {
+            position: absolute;
+            top: 10px; right: 10px;
+            color: rgba(255,255,255,0.9);
+            font-size: 11px;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            background: rgba(0,15,30,0.8);
+            padding: 12px 15px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(100,180,255,0.2);
+            z-index: 100;
+            min-width: 180px;
+        }
+        #performance .metric {
+            display: flex;
+            justify-content: space-between;
+            margin: 4px 0;
+        }
+        #performance .metric-label { color: #88aabb; }
+        #performance .metric-value { 
+            color: #64ddff; 
+            font-weight: 600;
+        }
+        #performance .metric-value.warning { color: #ffaa44; }
+        #performance .metric-value.danger { color: #ff6666; }
+        
+        /* 加载界面 */
+        #loading {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(180deg, #001020 0%, #000510 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 0.5s ease;
+        }
+        #loading.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        #loading .spinner-container {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            margin-bottom: 25px;
+        }
+        #loading .spinner {
+            position: absolute;
+            width: 100%; height: 100%;
+            border: 3px solid transparent;
+            border-top-color: #64ddff;
+            border-radius: 50%;
+            animation: spin 1.2s linear infinite;
+        }
+        #loading .spinner:nth-child(2) {
+            width: 60%; height: 60%;
+            top: 20%; left: 20%;
+            border-top-color: #4488cc;
+            animation-duration: 0.8s;
+            animation-direction: reverse;
+        }
+        #loading .spinner:nth-child(3) {
+            width: 30%; height: 30%;
+            top: 35%; left: 35%;
+            border-top-color: #88ccff;
+            animation-duration: 0.5s;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        #loading .loading-text {
+            color: #88ccff;
+            font-size: 18px;
+            margin-bottom: 15px;
+            letter-spacing: 2px;
+        }
+        #loading .loading-progress {
+            width: 250px;
+            height: 4px;
+            background: rgba(100,180,255,0.2);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        #loading .loading-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #4488cc, #64ddff);
+            transition: width 0.3s ease;
+            border-radius: 2px;
+        }
+        #loading .loading-status {
+            color: rgba(255,255,255,0.6);
+            font-size: 12px;
+            margin-top: 12px;
+        }
+        
+        /* 错误提示 */
+        #error-panel {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(40,10,10,0.95);
+            border: 1px solid rgba(255,100,100,0.4);
+            border-radius: 15px;
+            padding: 30px 40px;
+            color: white;
+            text-align: center;
+            z-index: 2000;
+            display: none;
+            max-width: 400px;
+        }
+        #error-panel h3 {
+            color: #ff6666;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        #error-panel p {
+            color: rgba(255,255,255,0.8);
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        #error-panel button {
+            background: linear-gradient(135deg, #4488cc, #64ddff);
+            border: none;
+            padding: 10px 25px;
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        #error-panel button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(100,180,255,0.4);
+        }
+        
+        /* 生态状态指示器 */
+        #eco-status {
+            position: absolute;
+            bottom: 10px; left: 10px;
+            background: rgba(0,15,30,0.8);
+            border-radius: 10px;
+            padding: 12px 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(100,180,255,0.2);
+            z-index: 100;
+        }
+        #eco-status .eco-title {
+            color: #88ccff;
+            font-size: 12px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        #eco-status .eco-bar {
+            width: 150px;
+            height: 6px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        #eco-status .eco-fill {
+            height: 100%;
+            width: 85%;
+            background: linear-gradient(90deg, #44aa66, #66dd88);
+            border-radius: 3px;
+            transition: width 0.5s ease, background 0.5s ease;
+        }
+        #eco-status .eco-value {
+            color: rgba(255,255,255,0.8);
+            font-size: 11px;
+            margin-top: 5px;
+            text-align: right;
+        }
+        
+        /* 移动端适配 */
+        @media (max-width: 768px) {
+            #info { 
+                top: 5px; left: 5px;
+                padding: 10px 12px;
+                font-size: 11px;
+                max-width: 200px;
+            }
+            #info h3 { font-size: 14px; }
+            #performance { 
+                top: auto; 
+                bottom: 60px; 
+                right: 5px;
+                font-size: 10px;
+                padding: 8px 10px;
+                min-width: 140px;
+            }
+            #eco-status {
+                bottom: 5px;
+                left: 5px;
+                padding: 8px 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 加载界面 -->
+    <div id="loading">
+        <div class="spinner-container">
+            <div class="spinner"></div>
+            <div class="spinner"></div>
+            <div class="spinner"></div>
+        </div>
+        <div class="loading-text">🌊 正在生成海底世界</div>
+        <div class="loading-progress">
+            <div class="loading-bar" id="loadingBar"></div>
+        </div>
+        <div class="loading-status" id="loadingStatus">初始化系统...</div>
+    </div>
+    
+    <!-- 错误面板 -->
+    <div id="error-panel">
+        <h3>⚠️ 系统错误</h3>
+        <p id="errorMessage">发生未知错误</p>
+        <button onclick="location.reload()">重新加载</button>
+    </div>
+    
+    <!-- 信息面板 -->
+    <div id="info">
+        <h3>🌊 海底生态系统</h3>
+        <div class="controls">
+            <span>🖱️ 左键</span> 旋转视角<br>
+            <span>🖱️ 滚轮</span> 缩放场景<br>
+            <span>🖱️ 右键</span> 平移视角<br>
+            <span>👆 点击</span> 与鱼群互动<br>
+            <span>⌨️ 空格</span> 暂停/继续
+        </div>
+    </div>
+    
+    <!-- 性能监控 -->
+    <div id="performance">
+        <div class="metric">
+            <span class="metric-label">FPS:</span>
+            <span class="metric-value" id="fpsValue">--</span>
+        </div>
+        <div class="metric">
+            <span class="metric-label">帧时间:</span>
+            <span class="metric-value" id="frameTime">--</span>
+        </div>
+        <div class="metric">
+            <span class="metric-label">鱼群:</span>
+            <span class="metric-value" id="fishCount">--</span>
+        </div>
+        <div class="metric">
+            <span class="metric-label">绘制调用:</span>
+            <span class="metric-value" id="drawCalls">--</span>
+        </div>
+        <div class="metric">
+            <span class="metric-label">质量等级:</span>
+            <span class="metric-value" id="qualityLevel">--</span>
+        </div>
+    </div>
+    
+    <!-- 生态状态 -->
+    <div id="eco-status">
+        <div class="eco-title">🌿 生态系统健康度</div>
+        <div class="eco-bar">
+            <div class="eco-fill" id="ecoFill"></div>
+        </div>
+        <div class="eco-value" id="ecoValue">85% - 健康</div>
+    </div>
+    
+    <canvas id="sea3dCanvas"></canvas>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.162.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <script type="module">
+
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+        import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+
+        // ==================== 配置管理器 ====================
+        class ConfigManager {
+            constructor() {
+                // 根据设备性能自动选择配置
+                const deviceTier = this.detectDeviceTier();
+                
+                this.configs = {
+                    ultra: {
+                        TERRAIN_SIZE: 200,
+                        TERRAIN_SEGMENTS: 180,
+                        MAX_FISHES: 120,
+                        MAX_PARTICLES: 3000,
+                        MAX_BUBBLES: 400,
+                        MAX_SEAWEED: 200,
+                        MAX_CORAL: 60,
+                        SHADOW_MAP_SIZE: 2048,
+                        BLOOM_ENABLED: true,
+                        CAUSTICS_ENABLED: true,
+                        FISH_DETAIL: 'high'
+                    },
+                    high: {
+                        TERRAIN_SIZE: 180,
+                        TERRAIN_SEGMENTS: 150,
+                        MAX_FISHES: 80,
+                        MAX_PARTICLES: 2000,
+                        MAX_BUBBLES: 300,
+                        MAX_SEAWEED: 150,
+                        MAX_CORAL: 40,
+                        SHADOW_MAP_SIZE: 1536,
+                        BLOOM_ENABLED: true,
+                        CAUSTICS_ENABLED: true,
+                        FISH_DETAIL: 'medium'
+                    },
+                    medium: {
+                        TERRAIN_SIZE: 150,
+                        TERRAIN_SEGMENTS: 120,
+                        MAX_FISHES: 50,
+                        MAX_PARTICLES: 1200,
+                        MAX_BUBBLES: 200,
+                        MAX_SEAWEED: 100,
+                        MAX_CORAL: 25,
+                        SHADOW_MAP_SIZE: 1024,
+                        BLOOM_ENABLED: true,
+                        CAUSTICS_ENABLED: false,
+                        FISH_DETAIL: 'low'
+                    },
+                    low: {
+                        TERRAIN_SIZE: 120,
+                        TERRAIN_SEGMENTS: 80,
+                        MAX_FISHES: 25,
+                        MAX_PARTICLES: 600,
+                        MAX_BUBBLES: 100,
+                        MAX_SEAWEED: 50,
+                        MAX_CORAL: 15,
+                        SHADOW_MAP_SIZE: 512,
+                        BLOOM_ENABLED: false,
+                        CAUSTICS_ENABLED: false,
+                        FISH_DETAIL: 'low'
+                    }
+                };
+                
+                this.currentTier = deviceTier;
+                this.CONFIG = { ...this.configs[deviceTier] };
+                this.BOUNDS = new THREE.Vector3(100, 50, 100);
+            }
+            
+            detectDeviceTier() {
+                // 检测设备性能等级
+                const canvas = document.createElement('canvas');
+                const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+                
+                if (!gl) return 'low';
+                
+                const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+                const renderer = debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : '';
+                
+                // 检测GPU型号
+                const isHighEnd = /(RTX|GTX.*(10|20|30|40)|RX.*(5|6|7)|Apple M[12])/.test(renderer);
+                const isLowEnd = /(Intel.*HD|Intel.*UHD|Basic Render Driver)/.test(renderer);
+                
+                // 检测屏幕分辨率和像素比
+                const pixelRatio = window.devicePixelRatio || 1;
+                const screenPixels = window.screen.width * window.screen.height;
+                
+                // 检测CPU核心数
+                const cpuCores = navigator.hardwareConcurrency || 2;
+                
+                // 内存检测（如果可用）
+                const memory = navigator.deviceMemory || 4;
+                
+                if (isHighEnd && pixelRatio >= 1.5 && cpuCores >= 6 && memory >= 8) {
+                    return 'ultra';
+                } else if (!isLowEnd && pixelRatio >= 1 && cpuCores >= 4 && memory >= 4) {
+                    return 'high';
+                } else if (pixelRatio >= 1 && cpuCores >= 2 && memory >= 2) {
+                    return 'medium';
+                }
+                return 'low';
+            }
+            
+            downgrade() {
+                const tiers = ['ultra', 'high', 'medium', 'low'];
+                const currentIndex = tiers.indexOf(this.currentTier);
+                if (currentIndex < tiers.length - 1) {
+                    this.currentTier = tiers[currentIndex + 1];
+                    this.CONFIG = { ...this.configs[this.currentTier] };
+                    return true;
+                }
+                return false;
+            }
+            
+            getQualityLabel() {
+                const labels = {
+                    ultra: '极高',
+                    high: '高',
+                    medium: '中',
+                    low: '低'
+                };
+                return labels[this.currentTier];
+            }
+        }
+
+        const configManager = new ConfigManager();
+        const CONFIG = configManager.CONFIG;
+
+        // ==================== 性能监控器 ====================
+        class PerformanceMonitor {
+            constructor() {
+                this.frames = [];
+                this.lastTime = performance.now();
+                this.frameCount = 0;
+                this.fps = 60;
+                this.frameTime = 16.67;
+                this.averageFPS = 60;
+                this.targetFPS = 60;
+                this.consecutiveLowFrames = 0;
+                this.adaptiveQuality = true;
+                this.stats = { drawCalls: 0, triangles: 0 };
+            }
+            
+            update() {
+                const now = performance.now();
+                const delta = now - this.lastTime;
+                this.frameCount++;
+                
+                if (delta >= 1000) {
+                    this.fps = Math.round((this.frameCount * 1000) / delta);
+                    this.frameTime = delta / this.frameCount;
+                    this.frames.push(this.fps);
+                    if (this.frames.length > 10) this.frames.shift();
+                    this.averageFPS = this.frames.reduce((a, b) => a + b, 0) / this.frames.length;
+                    
+                    // 自适应质量调整
+                    if (this.adaptiveQuality) {
+                        if (this.fps < 30) {
+                            this.consecutiveLowFrames++;
+                            if (this.consecutiveLowFrames >= 3) {
+                                return 'downgrade';
+                            }
+                        } else if (this.fps > 50) {
+                            this.consecutiveLowFrames = Math.max(0, this.consecutiveLowFrames - 1);
+                        }
+                    }
+                    
+                    this.frameCount = 0;
+                    this.lastTime = now;
+                }
+                return 'stable';
+            }
+            
+            updateStats(renderer) {
+                this.stats.drawCalls = renderer.info.render.calls;
+                this.stats.triangles = renderer.info.render.triangles;
+            }
+            
+            getFPSColor() {
+                if (this.fps >= 50) return '';
+                if (this.fps >= 30) return 'warning';
+                return 'danger';
+            }
+        }
+
+        const perfMonitor = new PerformanceMonitor();
+
+        // ==================== 空间哈希网格 ====================
+        class SpatialHashGrid {
+            constructor(cellSize = 10) {
+                this.cellSize = cellSize;
+                this.grid = new Map();
+            }
+            
+            clear() {
+                this.grid.clear();
+            }
+            
+            getCellKey(x, y, z) {
+                const cx = Math.floor(x / this.cellSize);
+                const cy = Math.floor(y / this.cellSize);
+                const cz = Math.floor(z / this.cellSize);
+                return `${cx},${cy},${cz}`;
+            }
+            
+            insert(obj, index) {
+                const key = this.getCellKey(obj.x, obj.y, obj.z);
+                if (!this.grid.has(key)) {
+                    this.grid.set(key, []);
+                }
+                this.grid.get(key).push({ obj, index });
+            }
+            
+            queryNeighbors(position, radius) {
+                const neighbors = [];
+                const cellRadius = Math.ceil(radius / this.cellSize);
+                const cx = Math.floor(position.x / this.cellSize);
+                const cy = Math.floor(position.y / this.cellSize);
+                const cz = Math.floor(position.z / this.cellSize);
+                
+                for (let x = cx - cellRadius; x <= cx + cellRadius; x++) {
+                    for (let y = cy - cellRadius; y <= cy + cellRadius; y++) {
+                        for (let z = cz - cellRadius; z <= cz + cellRadius; z++) {
+                            const key = `${x},${y},${z}`;
+                            if (this.grid.has(key)) {
+                                neighbors.push(...this.grid.get(key));
+                            }
+                        }
+                    }
+                }
+                return neighbors;
+            }
+        }
+
+        // ==================== 对象池 ====================
+        class ObjectPool {
+            constructor(createFn, resetFn, initialSize = 10) {
+                this.createFn = createFn;
+                this.resetFn = resetFn;
+                this.available = [];
+                this.inUse = new Set();
+                
+                for (let i = 0; i < initialSize; i++) {
+                    this.available.push(this.createFn());
+                }
+            }
+            
+            acquire() {
+                let obj;
+                if (this.available.length > 0) {
+                    obj = this.available.pop();
+                } else {
+                    obj = this.createFn();
+                }
+                this.inUse.add(obj);
+                return obj;
+            }
+            
+            release(obj) {
+                if (this.inUse.has(obj)) {
+                    this.inUse.delete(obj);
+                    this.resetFn(obj);
+                    this.available.push(obj);
+                }
+            }
+            
+            releaseAll() {
+                this.inUse.forEach(obj => {
+                    this.resetFn(obj);
+                    this.available.push(obj);
+                });
+                this.inUse.clear();
+            }
+        }
+
+        // ==================== 3D噪声生成器 ====================
+        class SimplexNoise3D {
+            constructor(seed = Math.random()) {
+                this.grad3 = new Float32Array([1,1,0,-1,1,0,1,-1,0,-1,-1,0,1,0,1,-1,0,1,1,0,-1,-1,0,-1,0,1,1,0,-1,1,0,1,-1,0,-1,-1]);
+                this.p = new Uint8Array(256);
+                this.perm = new Uint8Array(512);
+                
+                // 随机置换
+                const permutation = [...Array(256)].map((_, i) => i);
+                let seedVal = seed * 2147483647;
+                for (let i = 255; i > 0; i--) {
+                    seedVal = (seedVal * 16807) % 2147483647;
+                    const j = seedVal % (i + 1);
+                    [permutation[i], permutation[j]] = [permutation[j], permutation[i]];
+                }
+                
+                for (let i = 0; i < 256; i++) this.p[i] = permutation[i];
+                for (let i = 0; i < 512; i++) this.perm[i] = this.p[i & 255];
+                
+                this.F3 = 1.0 / 3.0;
+                this.G3 = 1.0 / 6.0;
+            }
+            
+            noise(xin, yin, zin) {
+                const { F3, G3, grad3, perm } = this;
+                const s = (xin + yin + zin) * F3;
+                const i = Math.floor(xin + s), j = Math.floor(yin + s), k = Math.floor(zin + s);
+                const t = (i + j + k) * G3;
+                const X0 = i - t, Y0 = j - t, Z0 = k - t;
+                const x0 = xin - X0, y0 = yin - Y0, z0 = zin - Z0;
+                
+                let i1, j1, k1, i2, j2, k2;
+                if (x0 >= y0) {
+                    if (y0 >= z0) { i1=1;j1=0;k1=0;i2=1;j2=1;k2=0; }
+                    else if (x0 >= z0) { i1=1;j1=0;k1=0;i2=1;j2=0;k2=1; }
+                    else { i1=0;j1=0;k1=1;i2=1;j2=0;k2=1; }
+                } else {
+                    if (y0 < z0) { i1=0;j1=0;k1=1;i2=0;j2=1;k2=1; }
+                    else if (x0 < z0) { i1=0;j1=1;k1=0;i2=0;j2=1;k2=1; }
+                    else { i1=0;j1=1;k1=0;i2=1;j2=1;k2=0; }
+                }
+                
+                const x1 = x0 - i1 + G3, y1 = y0 - j1 + G3, z1 = z0 - k1 + G3;
+                const x2 = x0 - i2 + 2*G3, y2 = y0 - j2 + 2*G3, z2 = z0 - k2 + 2*G3;
+                const x3 = x0 - 1 + 3*G3, y3 = y0 - 1 + 3*G3, z3 = z0 - 1 + 3*G3;
+                
+                const ii = i & 255, jj = j & 255, kk = k & 255;
+                const gi0 = (perm[ii + perm[jj + perm[kk]]] % 12) * 3;
+                const gi1 = (perm[ii + i1 + perm[jj + j1 + perm[kk + k1]]] % 12) * 3;
+                const gi2 = (perm[ii + i2 + perm[jj + j2 + perm[kk + k2]]] % 12) * 3;
+                const gi3 = (perm[ii + 1 + perm[jj + 1 + perm[kk + 1]]] % 12) * 3;
+                
+                let n0 = 0, n1 = 0, n2 = 0, n3 = 0;
+                let t0 = 0.6 - x0*x0 - y0*y0 - z0*z0;
+                if (t0 > 0) { t0 *= t0; n0 = t0 * t0 * (grad3[gi0]*x0 + grad3[gi0+1]*y0 + grad3[gi0+2]*z0); }
+                let t1 = 0.6 - x1*x1 - y1*y1 - z1*z1;
+                if (t1 > 0) { t1 *= t1; n1 = t1 * t1 * (grad3[gi1]*x1 + grad3[gi1+1]*y1 + grad3[gi1+2]*z1); }
+                let t2 = 0.6 - x2*x2 - y2*y2 - z2*z2;
+                if (t2 > 0) { t2 *= t2; n2 = t2 * t2 * (grad3[gi2]*x2 + grad3[gi2+1]*y2 + grad3[gi2+2]*z2); }
+                let t3 = 0.6 - x3*x3 - y3*y3 - z3*z3;
+                if (t3 > 0) { t3 *= t3; n3 = t3 * t3 * (grad3[gi3]*x3 + grad3[gi3+1]*y3 + grad3[gi3+2]*z3); }
+                
+                return 32 * (n0 + n1 + n2 + n3);
+            }
+            
+            fbm(x, y, z, octaves = 4, lacunarity = 2, persistence = 0.5) {
+                let value = 0, amplitude = 1, frequency = 1, maxValue = 0;
+                for (let i = 0; i < octaves; i++) {
+                    value += this.noise(x * frequency, y * frequency, z * frequency) * amplitude;
+                    maxValue += amplitude;
+                    amplitude *= persistence;
+                    frequency *= lacunarity;
+                }
+                return value / maxValue;
+            }
+        }
+
+        // ==================== 地形生成器 ====================
+        class TerrainGenerator {
+            constructor() {
+                this.baseNoise = new SimplexNoise3D(Math.random());
+                this.detailNoise = new SimplexNoise3D(Math.random() * 1000);
+                this.ridgeNoise = new SimplexNoise3D(Math.random() * 2000);
+                this.erosionNoise = new SimplexNoise3D(Math.random() * 3000);
+                this.coralNoise = new SimplexNoise3D(Math.random() * 4000);
+                
+                // 预计算高度缓存
+                this.heightCache = new Map();
+                this.cacheEnabled = true;
+            }
+            
+            getTerrainHeight(x, z) {
+                // 缓存检查
+                if (this.cacheEnabled) {
+                    const key = `${Math.round(x)},${Math.round(z)}`;
+                    if (this.heightCache.has(key)) {
+                        return this.heightCache.get(key);
+                    }
+                }
+                
+                const scale = 0.012;
+                
+                // 基础地形 - 大陆架
+                let height = this.baseNoise.fbm(x * scale, 0, z * scale, 5) * 25;
+                
+                // 山脊 - 海底山脉
+                const ridge = 1 - Math.abs(this.ridgeNoise.noise(x * scale * 0.4, 0, z * scale * 0.4));
+                height += ridge * ridge * 12;
+                
+                // 细节 - 小起伏
+                height += this.detailNoise.noise(x * scale * 3, 0, z * scale * 3) * 3;
+                height += this.detailNoise.noise(x * scale * 6, 0, z * scale * 6) * 1;
+                
+                // 侵蚀效果
+                const erosion = this.erosionNoise.fbm(x * 0.006, z * 0.006, 0, 3);
+                height *= (1 - erosion * 0.25);
+                
+                // 珊瑚礁区域
+                const coralArea = this.coralNoise.fbm(x * 0.02, z * 0.02, 0, 2);
+                if (coralArea > 0.3) {
+                    height += coralArea * 2;
+                }
+                
+                const result = -height - 15;
+                
+                // 缓存结果
+                if (this.cacheEnabled && this.heightCache.size < 50000) {
+                    this.heightCache.set(`${Math.round(x)},${Math.round(z)}`, result);
+                }
+                
+                return result;
+            }
+            
+            getTerrainColor(height, normal, x, z) {
+                // 多层纹理混合
+                const sandColor = new THREE.Color(0xC4A574);
+                const rockColor = new THREE.Color(0x5A5A6A);
+                const deepColor = new THREE.Color(0x2A2A3A);
+                const coralColor = new THREE.Color(0x8B7355);
+                
+                const depth = -height;
+                const t = THREE.MathUtils.smoothstep(depth, 5, 35);
+                const slope = 1 - normal.y;
+                
+                // 基础颜色混合
+                let color = sandColor.clone().lerp(deepColor, t);
+                
+                // 根据坡度添加岩石
+                if (slope > 0.35) {
+                    color.lerp(rockColor, Math.min(1, (slope - 0.35) * 2.5));
+                }
+                
+                // 珊瑚礁区域颜色
+                const coralArea = this.coralNoise.fbm(x * 0.02, z * 0.02, 0, 2);
+                if (coralArea > 0.3 && depth < 25) {
+                    color.lerp(coralColor, (coralArea - 0.3) * 0.5);
+                }
+                
+                return color;
+            }
+            
+            clearCache() {
+                this.heightCache.clear();
+            }
+        }
+
+
+        // ==================== 程序化鱼类模型生成器 ====================
+        class FishModelGenerator {
+            static createFishGeometry(detail = 'medium') {
+                const geometries = [];
+                
+                // 身体
+                const bodySegments = detail === 'high' ? 12 : (detail === 'medium' ? 8 : 6);
+                const bodyGeometry = new THREE.SphereGeometry(0.5, bodySegments, bodySegments);
+                bodyGeometry.scale(1, 0.6, 2.2);
+                geometries.push(bodyGeometry);
+                
+                // 尾巴
+                const tailGeometry = new THREE.ConeGeometry(0.35, 1, bodySegments);
+                tailGeometry.rotateX(-Math.PI / 2);
+                tailGeometry.translate(0, 0, -1.8);
+                geometries.push(tailGeometry);
+                
+                // 背鳍
+                const dorsalFin = new THREE.BufferGeometry();
+                const finVertices = new Float32Array([
+                    0, 0.3, 0.5,    0, 0.8, 0,      0, 0.3, -0.5,
+                    0, 0.3, -0.5,   0, 0.8, 0,      0, 0.3, 0.5
+                ]);
+                dorsalFin.setAttribute('position', new THREE.BufferAttribute(finVertices, 3));
+                dorsalFin.computeVertexNormals();
+                geometries.push(dorsalFin);
+                
+                // 胸鳍（两侧）
+                const sideFin = new THREE.BufferGeometry();
+                const sideFinVertices = new Float32Array([
+                    0.5, -0.1, 0.3,   0.9, -0.3, 0.1,   0.5, -0.1, -0.2,
+                    -0.5, -0.1, 0.3,  -0.9, -0.3, 0.1,  -0.5, -0.1, -0.2
+                ]);
+                sideFin.setAttribute('position', new THREE.BufferAttribute(sideFinVertices, 3));
+                sideFin.computeVertexNormals();
+                geometries.push(sideFin);
+                
+                // 合并几何体
+                return THREE.BufferGeometryUtils ? 
+                    THREE.BufferGeometryUtils.mergeGeometries(geometries) :
+                    this.manualMergeGeometries(geometries);
+            }
+            
+            static manualMergeGeometries(geometries) {
+                // 简化的几何体合并
+                const merged = new THREE.BufferGeometry();
+                let vertexCount = 0;
+                geometries.forEach(g => vertexCount += g.attributes.position.count);
+                
+                const positions = new Float32Array(vertexCount * 3);
+                const normals = new Float32Array(vertexCount * 3);
+                let offset = 0;
+                
+                geometries.forEach(geo => {
+                    const pos = geo.attributes.position.array;
+                    const norm = geo.attributes.normal ? geo.attributes.normal.array : new Float32Array(pos.length);
+                    
+                    for (let i = 0; i < pos.length; i++) {
+                        positions[offset * 3 + i] = pos[i];
+                        normals[offset * 3 + i] = norm[i] || 0;
+                    }
+                    offset += geo.attributes.position.count;
+                });
+                
+                merged.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                merged.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+                merged.computeVertexNormals();
+                return merged;
+            }
+        }
+
+        // ==================== Boids鱼群AI系统 ====================
+        class BoidsFishSchool {
+            constructor(scene, terrainGen, config) {
+                this.scene = scene;
+                this.terrainGen = terrainGen;
+                this.config = config;
+                this.fishes = [];
+                this.instancedMesh = null;
+                this.dummy = new THREE.Object3D();
+                this.velocities = [];
+                this.colors = [];
+                this.spatialGrid = new SpatialHashGrid(8);
+                
+                // Boids参数（可调整）
+                this.separationDist = 3.5;
+                this.alignmentDist = 8;
+                this.cohesionDist = 12;
+                this.maxSpeed = 0.18;
+                this.maxForce = 0.006;
+                this.perceptionRadius = 15;
+                
+                // 鱼群行为状态
+                this.fleeTargets = [];
+                this.attractPoints = [];
+                this.schoolCenters = [];
+                
+                // 动画参数
+                this.tailPhases = [];
+                this.swimSpeeds = [];
+            }
+            
+            createSchool(count) {
+                this.dispose();
+                
+                // 创建鱼类几何体
+                let geometry;
+                if (CONFIG.FISH_DETAIL === 'high') {
+                    geometry = FishModelGenerator.createFishGeometry('high');
+                } else if (CONFIG.FISH_DETAIL === 'medium') {
+                    geometry = new THREE.ConeGeometry(0.35, 1.4, 8);
+                    geometry.rotateX(Math.PI / 2);
+                } else {
+                    geometry = new THREE.ConeGeometry(0.3, 1.2, 6);
+                    geometry.rotateX(Math.PI / 2);
+                }
+                
+                // 材质优化
+                const material = new THREE.MeshStandardMaterial({
+                    vertexColors: true,
+                    roughness: 0.35,
+                    metalness: 0.25,
+                    envMapIntensity: 0.8
+                });
+                
+                this.instancedMesh = new THREE.InstancedMesh(geometry, material, count);
+                this.instancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+                this.instancedMesh.castShadow = true;
+                this.instancedMesh.receiveShadow = true;
+                
+                this.fishes = [];
+                this.velocities = [];
+                this.tailPhases = [];
+                this.swimSpeeds = [];
+                
+                // 生成多种鱼群类型
+                const schoolCount = Math.ceil(count / 15);
+                const schools = [];
+                
+                for (let s = 0; s < schoolCount; s++) {
+                    schools.push({
+                        center: new THREE.Vector3(
+                            (Math.random() - 0.5) * 60,
+                            -Math.random() * 20 - 10,
+                            (Math.random() - 0.5) * 60
+                        ),
+                        color: new THREE.Color().setHSL(0.45 + Math.random() * 0.2, 0.7 + Math.random() * 0.2, 0.4 + Math.random() * 0.2),
+                        size: 0.7 + Math.random() * 0.6
+                    });
+                }
+                
+                const colorAttr = new Float32Array(count * 3);
+                
+                for (let i = 0; i < count; i++) {
+                    const school = schools[Math.floor(i / 15) % schools.length];
+                    
+                    // 在鱼群中心附近生成
+                    const angle = Math.random() * Math.PI * 2;
+                    const radius = Math.random() * 8;
+                    const pos = new THREE.Vector3(
+                        school.center.x + Math.cos(angle) * radius,
+                        school.center.y + (Math.random() - 0.5) * 6,
+                        school.center.z + Math.sin(angle) * radius
+                    );
+                    this.fishes.push(pos);
+                    
+                    // 初始速度朝向鱼群中心
+                    const toCenter = school.center.clone().sub(pos).normalize();
+                    const vel = toCenter.multiplyScalar(0.05).add(new THREE.Vector3(
+                        (Math.random() - 0.5) * 0.08,
+                        (Math.random() - 0.5) * 0.02,
+                        (Math.random() - 0.5) * 0.08
+                    ));
+                    this.velocities.push(vel);
+                    
+                    // 颜色变化
+                    const colorVar = school.color.clone();
+                    colorVar.offsetHSL(0, (Math.random() - 0.5) * 0.1, (Math.random() - 0.5) * 0.1);
+                    colorAttr[i * 3] = colorVar.r;
+                    colorAttr[i * 3 + 1] = colorVar.g;
+                    colorAttr[i * 3 + 2] = colorVar.b;
+                    
+                    // 动画参数
+                    this.tailPhases.push(Math.random() * Math.PI * 2);
+                    this.swimSpeeds.push(0.8 + Math.random() * 0.4);
+                }
+                
+                geometry.setAttribute('color', new THREE.InstancedBufferAttribute(colorAttr, 3));
+                this.scene.add(this.instancedMesh);
+                
+                // 初始化空间网格
+                this.updateSpatialGrid();
+            }
+            
+            updateSpatialGrid() {
+                this.spatialGrid.clear();
+                for (let i = 0; i < this.fishes.length; i++) {
+                    this.spatialGrid.insert(this.fishes[i], i);
+                }
+            }
+            
+            update(deltaTime, time) {
+                if (!this.instancedMesh) return;
+                
+                const dt = Math.min(deltaTime, 0.05);
+                
+                // 每5帧更新一次空间网格
+                if (Math.floor(time * 60) % 5 === 0) {
+                    this.updateSpatialGrid();
+                }
+                
+                for (let i = 0; i < this.fishes.length; i++) {
+                    const pos = this.fishes[i];
+                    const vel = this.velocities[i];
+                    
+                    // 使用空间网格查询邻居
+                    const neighbors = this.spatialGrid.queryNeighbors(pos, this.perceptionRadius);
+                    
+                    // Boids规则
+                    const sep = this.separation(i, neighbors).multiplyScalar(2.0);
+                    const ali = this.alignment(i, neighbors).multiplyScalar(1.2);
+                    const coh = this.cohesion(i, neighbors).multiplyScalar(1.0);
+                    const bounds = this.boundaryForce(pos).multiplyScalar(2.5);
+                    const terrain = this.terrainAvoidance(pos).multiplyScalar(3.0);
+                    
+                    // 逃避行为
+                    let flee = new THREE.Vector3();
+                    for (const target of this.fleeTargets) {
+                        const dist = pos.distanceTo(target);
+                        if (dist < 15) {
+                            const away = pos.clone().sub(target).normalize().multiplyScalar(this.maxForce * 5 * (1 - dist / 15));
+                            flee.add(away);
+                        }
+                    }
+                    
+                    // 应用力
+                    vel.add(sep).add(ali).add(coh).add(bounds).add(terrain).add(flee);
+                    
+                    // 限制速度
+                    const speed = vel.length();
+                    if (speed > this.maxSpeed) {
+                        vel.normalize().multiplyScalar(this.maxSpeed);
+                    } else if (speed < this.maxSpeed * 0.3) {
+                        vel.normalize().multiplyScalar(this.maxSpeed * 0.3);
+                    }
+                    
+                    // 更新位置
+                    pos.add(vel.clone().multiplyScalar(dt * 60));
+                    
+                    // 更新实例矩阵
+                    this.dummy.position.copy(pos);
+                    if (vel.lengthSq() > 0.0001) {
+                        this.dummy.lookAt(pos.clone().add(vel));
+                    }
+                    
+                    // 添加游动摆动
+                    const swimOffset = Math.sin(time * 8 * this.swimSpeeds[i] + this.tailPhases[i]) * 0.08;
+                    this.dummy.rotation.z += swimOffset;
+                    
+                    this.dummy.updateMatrix();
+                    this.instancedMesh.setMatrixAt(i, this.dummy.matrix);
+                }
+                
+                this.instancedMesh.instanceMatrix.needsUpdate = true;
+                
+                // 清理逃避目标
+                this.fleeTargets = [];
+            }
+            
+            separation(index, neighbors) {
+                const steer = new THREE.Vector3();
+                let count = 0;
+                const pos = this.fishes[index];
+                
+                for (const { obj: otherPos, index: otherIndex } of neighbors) {
+                    if (otherIndex === index) continue;
+                    const d = pos.distanceTo(otherPos);
+                    if (d < this.separationDist && d > 0.01) {
+                        const diff = pos.clone().sub(otherPos).normalize().divideScalar(d);
+                        steer.add(diff);
+                        count++;
+                    }
+                }
+                
+                if (count > 0) {
+                    steer.divideScalar(count);
+                    steer.normalize().multiplyScalar(this.maxSpeed);
+                    steer.sub(this.velocities[index]).clampLength(0, this.maxForce * 2);
+                }
+                return steer;
+            }
+            
+            alignment(index, neighbors) {
+                const avgVel = new THREE.Vector3();
+                let count = 0;
+                const pos = this.fishes[index];
+                
+                for (const { obj: otherPos, index: otherIndex } of neighbors) {
+                    if (otherIndex === index) continue;
+                    if (pos.distanceTo(otherPos) < this.alignmentDist) {
+                        avgVel.add(this.velocities[otherIndex]);
+                        count++;
+                    }
+                }
+                
+                if (count > 0) {
+                    avgVel.divideScalar(count);
+                    avgVel.normalize().multiplyScalar(this.maxSpeed);
+                    return avgVel.sub(this.velocities[index]).clampLength(0, this.maxForce);
+                }
+                return avgVel;
+            }
+            
+            cohesion(index, neighbors) {
+                const center = new THREE.Vector3();
+                let count = 0;
+                const pos = this.fishes[index];
+                
+                for (const { obj: otherPos, index: otherIndex } of neighbors) {
+                    if (otherIndex === index) continue;
+                    if (pos.distanceTo(otherPos) < this.cohesionDist) {
+                        center.add(otherPos);
+                        count++;
+                    }
+                }
+                
+                if (count > 0) {
+                    center.divideScalar(count);
+                    return center.sub(pos).normalize().multiplyScalar(this.maxSpeed)
+                        .sub(this.velocities[index]).clampLength(0, this.maxForce);
+                }
+                return center;
+            }
+            
+            boundaryForce(pos) {
+                const force = new THREE.Vector3();
+                const margin = 15;
+                const bounds = configManager.BOUNDS;
+                
+                if (pos.x > bounds.x / 2 - margin) force.x = -this.maxForce * 3;
+                if (pos.x < -bounds.x / 2 + margin) force.x = this.maxForce * 3;
+                if (pos.y > -3) force.y = -this.maxForce * 4;
+                if (pos.y < -45) force.y = this.maxForce * 3;
+                if (pos.z > bounds.z / 2 - margin) force.z = -this.maxForce * 3;
+                if (pos.z < -bounds.z / 2 + margin) force.z = this.maxForce * 3;
+                
+                return force;
+            }
+            
+            terrainAvoidance(pos) {
+                const force = new THREE.Vector3();
+                const terrainHeight = this.terrainGen.getTerrainHeight(pos.x, pos.z);
+                const clearance = pos.y - terrainHeight;
+                
+                if (clearance < 5) {
+                    force.y = this.maxForce * 4 * (1 - clearance / 5);
+                }
+                
+                return force;
+            }
+            
+            addFleeTarget(position) {
+                this.fleeTargets.push(position.clone());
+            }
+            
+            getFishAtPosition(position, radius = 5) {
+                const nearby = [];
+                for (let i = 0; i < this.fishes.length; i++) {
+                    if (this.fishes[i].distanceTo(position) < radius) {
+                        nearby.push(i);
+                    }
+                }
+                return nearby;
+            }
+            
+            dispose() {
+                if (this.instancedMesh) {
+                    this.scene.remove(this.instancedMesh);
+                    if (this.instancedMesh.geometry) this.instancedMesh.geometry.dispose();
+                    if (this.instancedMesh.material) this.instancedMesh.material.dispose();
+                    this.instancedMesh = null;
+                }
+                this.fishes = [];
+                this.velocities = [];
+                this.spatialGrid.clear();
+            }
+        }
+
+
+        // ==================== 粒子系统 ====================
+        class ParticleSystem  {
+            constructor(scene, config) {
+                this.scene = scene;
+                this.config = config;
+                this.plankton = null;
+                this.bubbles = null;
+                this.marineSnow = null;
+                this.time = 0;
+                
+                this.createPlankton();
+                this.createBubbles();
+                this.createMarineSnow();
+            }
+            
+            createPlankton() {
+                const count = this.config.MAX_PARTICLES;
+                const geometry = new THREE.BufferGeometry();
+                const positions = new Float32Array(count * 3);
+                const sizes = new Float32Array(count);
+                const phases = new Float32Array(count);
+                
+                for (let i = 0; i < count; i++) {
+                    positions[i * 3] = (Math.random() - 0.5) * 180;
+                    positions[i * 3 + 1] = -Math.random() * 55 - 5;
+                    positions[i * 3 + 2] = (Math.random() - 0.5) * 180;
+                    sizes[i] = Math.random() * 0.4 + 0.08;
+                    phases[i] = Math.random() * Math.PI * 2;
+                }
+                
+                geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+                geometry.setAttribute('phase', new THREE.BufferAttribute(phases, 1));
+                
+                // 自定义着色器材质
+                const material = new THREE.ShaderMaterial({
+                    uniforms: {
+                        time: { value: 0 },
+                        color: { value: new THREE.Color(0x88ccff) }
+                    },
+                    vertexShader: `
+                        attribute float size;
+                        attribute float phase;
+                        uniform float time;
+                        varying float vAlpha;
+                        
+                        void main() {
+                            vec3 pos = position;
+                            pos.x += sin(time * 0.5 + phase) * 0.3;
+                            pos.y += cos(time * 0.3 + phase * 0.7) * 0.2;
+                            pos.z += sin(time * 0.4 + phase * 1.3) * 0.25;
+                            
+                            vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+                            gl_PointSize = size * (300.0 / -mvPosition.z);
+                            gl_Position = projectionMatrix * mvPosition;
+                            
+                            vAlpha = 0.4 + sin(time + phase) * 0.2;
+                        }
+                    `,
+                    fragmentShader: `
+                        uniform vec3 color;
+                        varying float vAlpha;
+                        
+                        void main() {
+                            float dist = length(gl_PointCoord - vec2(0.5));
+                            if (dist > 0.5) discard;
+                            float alpha = (1.0 - dist * 2.0) * vAlpha;
+                            gl_FragColor = vec4(color, alpha);
+                        }
+                    `,
+                    transparent: true,
+                    blending: THREE.AdditiveBlending,
+                    depthWrite: false
+                });
+                
+                this.plankton = new THREE.Points(geometry, material);
+                this.scene.add(this.plankton);
+            }
+            
+            createBubbles() {
+                const count = this.config.MAX_BUBBLES;
+                const geometry = new THREE.BufferGeometry();
+                const positions = new Float32Array(count * 3);
+                const sizes = new Float32Array(count);
+                const speeds = new Float32Array(count);
+                const wobble = new Float32Array(count);
+                
+                for (let i = 0; i < count; i++) {
+                    positions[i * 3] = (Math.random() - 0.5) * 120;
+                    positions[i * 3 + 1] = -Math.random() * 50 - 10;
+                    positions[i * 3 + 2] = (Math.random() - 0.5) * 120;
+                    sizes[i] = Math.random() * 0.5 + 0.15;
+                    speeds[i] = Math.random() * 0.08 + 0.03;
+                    wobble[i] = Math.random() * Math.PI * 2;
+                }
+                
+                geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+                geometry.setAttribute('speed', new THREE.BufferAttribute(speeds, 1));
+                geometry.setAttribute('wobble', new THREE.BufferAttribute(wobble, 1));
+                
+                const material = new THREE.ShaderMaterial({
+                    uniforms: {
+                        time: { value: 0 },
+                        color: { value: new THREE.Color(0xffffff) }
+                    },
+                    vertexShader: `
+                        attribute float size;
+                        attribute float speed;
+                        attribute float wobble;
+                        uniform float time;
+                        varying float vAlpha;
+                        
+                        void main() {
+                            vec3 pos = position;
+                            pos.x += sin(time * 2.0 + wobble) * 0.15;
+                            
+                            vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+                            gl_PointSize = size * (400.0 / -mvPosition.z);
+                            gl_Position = projectionMatrix * mvPosition;
+                            
+                            vAlpha = 0.5 + sin(time * 3.0 + wobble) * 0.15;
+                        }
+                    `,
+                    fragmentShader: `
+                        uniform vec3 color;
+                        varying float vAlpha;
+                        
+                        void main() {
+                            float dist = length(gl_PointCoord - vec2(0.5));
+                            if (dist > 0.5) discard;
+                            float alpha = (1.0 - dist * 2.0) * vAlpha * 0.6;
+                            float highlight = 1.0 - smoothstep(0.0, 0.3, dist);
+                            gl_FragColor = vec4(mix(color, vec3(1.0), highlight * 0.5), alpha);
+                        }
+                    `,
+                    transparent: true,
+                    blending: THREE.AdditiveBlending,
+                    depthWrite: false
+                });
+                
+                this.bubbles = new THREE.Points(geometry, material);
+                this.scene.add(this.bubbles);
+            }
+            
+            createMarineSnow() {
+                // 海洋雪 - 缓慢下沉的有机物颗粒
+                const count = Math.floor(this.config.MAX_PARTICLES * 0.3);
+                const geometry = new THREE.BufferGeometry();
+                const positions = new Float32Array(count * 3);
+                const sizes = new Float32Array(count);
+                
+                for (let i = 0; i < count; i++) {
+                    positions[i * 3] = (Math.random() - 0.5) * 200;
+                    positions[i * 3 + 1] = -Math.random() * 60;
+                    positions[i * 3 + 2] = (Math.random() - 0.5) * 200;
+                    sizes[i] = Math.random() * 0.15 + 0.05;
+                }
+                
+                geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+                
+                const material = new THREE.PointsMaterial({
+                    color: 0xaaaaaa,
+                    size: 0.1,
+                    transparent: true,
+                    opacity: 0.3,
+                    blending: THREE.NormalBlending,
+                    depthWrite: false
+                });
+                
+                this.marineSnow = new THREE.Points(geometry, material);
+                this.scene.add(this.marineSnow);
+            }
+            
+            update(time, deltaTime) {
+                this.time = time;
+                
+                // 更新浮游生物
+                if (this.plankton) {
+                    this.plankton.material.uniforms.time.value = time;
+                }
+                
+                // 更新气泡
+                if (this.bubbles) {
+                    this.bubbles.material.uniforms.time.value = time;
+                    
+                    const positions = this.bubbles.geometry.attributes.position.array;
+                    const speeds = this.bubbles.geometry.attributes.speed.array;
+                    
+                    for (let i = 0; i < positions.length / 3; i++) {
+                        positions[i * 3 + 1] += speeds[i] * deltaTime * 60;
+                        
+                        // 气泡到达水面后重置
+                        if (positions[i * 3 + 1] > 5) {
+                            positions[i * 3 + 1] = -50 - Math.random() * 15;
+                            positions[i * 3] = (Math.random() - 0.5) * 120;
+                            positions[i * 3 + 2] = (Math.random() - 0.5) * 120;
+                        }
+                    }
+                    this.bubbles.geometry.attributes.position.needsUpdate = true;
+                }
+                
+                // 更新海洋雪（缓慢下沉）
+                if (this.marineSnow) {
+                    const positions = this.marineSnow.geometry.attributes.position.array;
+                    for (let i = 0; i < positions.length / 3; i++) {
+                        positions[i * 3 + 1] -= 0.005 * deltaTime * 60;
+                        positions[i * 3] += Math.sin(time * 0.5 + i) * 0.002;
+                        
+                        if (positions[i * 3 + 1] < -60) {
+                            positions[i * 3 + 1] = -5;
+                        }
+                    }
+                    this.marineSnow.geometry.attributes.position.needsUpdate = true;
+                }
+            }
+            
+            dispose() {
+                [this.plankton, this.bubbles, this.marineSnow].forEach(p => {
+                    if (p) {
+                        this.scene.remove(p);
+                        if (p.geometry) p.geometry.dispose();
+                        if (p.material) {
+                            if (p.material.uniforms) {
+                                Object.values(p.material.uniforms).forEach(u => {
+                                    if (u.value && u.value.dispose) u.value.dispose();
+                                });
+                            }
+                            p.material.dispose();
+                        }
+                    }
+                });
+            }
+        }
+
+        // ==================== GPU动画海草系统 ====================
+        class GPUSeaweedSystem {
+            constructor(scene, terrainGen, config) {
+                this.scene = scene;
+                this.terrainGen = terrainGen;
+                this.config = config;
+                this.instancedMesh = null;
+                this.seaweedData = [];
+            }
+            
+            generate(count) {
+                this.dispose();
+                
+                // 创建带弯曲的海草几何体
+                const segments = 12;
+                const geometry = new THREE.CylinderGeometry(0.03, 0.12, 4, 5, segments, true);
+                geometry.translate(0, 2, 0);
+                
+                // 添加顶点属性用于动画
+                const positions = geometry.attributes.position.array;
+                const bendFactors = new Float32Array(positions.length / 3);
+                
+                for (let i = 0; i < positions.length / 3; i++) {
+                    const y = positions[i * 3 + 1];
+                    // 越高的顶点弯曲因子越大
+                    bendFactors[i] = Math.max(0, (y / 4) ** 2);
+                }
+                
+                geometry.setAttribute('bendFactor', new THREE.BufferAttribute(bendFactors, 1));
+                
+                // 自定义着色器材质 - GPU动画
+                const material = new THREE.ShaderMaterial({
+                    uniforms: {
+                        time: { value: 0 },
+                        baseColor: { value: new THREE.Color(0x2d6a4f) },
+                        tipColor: { value: new THREE.Color(0x52b788) },
+                        swayStrength: { value: 0.3 }
+                    },
+                    vertexShader: `
+                        attribute float bendFactor;
+                        uniform float time;
+                        uniform float swayStrength;
+                        varying vec2 vUv;
+                        varying float vHeight;
+                        
+                        void main() {
+                            vUv = uv;
+                            vHeight = position.y / 4.0;
+                            
+                            vec3 pos = position;
+                            
+                            // GPU顶点动画
+                            float sway = sin(time * 1.5 + instanceMatrix[3][0] * 0.5 + instanceMatrix[3][2] * 0.3) * swayStrength;
+                            float secondarySway = sin(time * 2.3 + instanceMatrix[3][0] * 0.8) * swayStrength * 0.3;
+                            
+                            pos.x += (sway + secondarySway) * bendFactor;
+                            pos.z += cos(time * 1.2 + instanceMatrix[3][2] * 0.5) * swayStrength * 0.5 * bendFactor;
+                            
+                            // 添加扭曲效果
+                            float twist = sin(time * 0.8 + position.y * 2.0) * 0.1 * bendFactor;
+                            pos.x += twist;
+                            
+                            vec4 mvPosition = modelViewMatrix * instanceMatrix * vec4(pos, 1.0);
+                            gl_Position = projectionMatrix * mvPosition;
+                        }
+                    `,
+                    fragmentShader: `
+                        uniform vec3 baseColor;
+                        uniform vec3 tipColor;
+                        varying vec2 vUv;
+                        varying float vHeight;
+                        
+                        void main() {
+                            // 从底部到顶部的颜色渐变
+                            vec3 color = mix(baseColor, tipColor, vHeight * 0.7);
+                            
+                            // 添加简单的光照
+                            float light = 0.6 + 0.4 * sin(vUv.x * 3.14159);
+                            color *= light;
+                            
+                            gl_FragColor = vec4(color, 1.0);
+                        }
+                    `,
+                    side: THREE.DoubleSide
+                });
+                
+                this.instancedMesh = new THREE.InstancedMesh(geometry, material, count);
+                this.instancedMesh.castShadow = true;
+                this.instancedMesh.receiveShadow = true;
+                
+                const dummy = new THREE.Object3D();
+                this.seaweedData = [];
+                
+                let placed = 0;
+                let attempts = 0;
+                
+                while (placed < count && attempts < count * 3) {
+                    attempts++;
+                    
+                    const x = (Math.random() - 0.5) * 140;
+                    const z = (Math.random() - 0.5) * 140;
+                    const y = this.terrainGen.getTerrainHeight(x, z);
+                    
+                    // 只在特定深度范围放置海草
+                    if (y < -8 && y > -40) {
+                        const height = 0.7 + Math.random() * 0.8;
+                        dummy.position.set(x, y, z);
+                        dummy.scale.set(0.8 + Math.random() * 0.4, height, 0.8 + Math.random() * 0.4);
+                        dummy.rotation.y = Math.random() * Math.PI * 2;
+                        dummy.updateMatrix();
+                        
+                        this.instancedMesh.setMatrixAt(placed, dummy.matrix);
+                        this.seaweedData.push({
+                            x, y, z,
+                            phase: Math.random() * Math.PI * 2,
+                            height,
+                            swaySpeed: 0.8 + Math.random() * 0.4
+                        });
+                        placed++;
+                    }
+                }
+                
+                this.instancedMesh.count = placed;
+                this.instancedMesh.instanceMatrix.needsUpdate = true;
+                this.scene.add(this.instancedMesh);
+            }
+            
+            update(time) {
+                if (this.instancedMesh) {
+                    this.instancedMesh.material.uniforms.time.value = time;
+                }
+            }
+            
+            dispose() {
+                if (this.instancedMesh) {
+                    this.scene.remove(this.instancedMesh);
+                    if (this.instancedMesh.geometry) this.instancedMesh.geometry.dispose();
+                    if (this.instancedMesh.material) this.instancedMesh.material.dispose();
+                    this.instancedMesh = null;
+                }
+                this.seaweedData = [];
+            }
+        }
+
+        // ==================== 多样化珊瑚系统 ====================
+        class DiverseCoralSystem {
+            constructor(scene, terrainGen, config) {
+                this.scene = scene;
+                this.terrainGen = terrainGen;
+                this.config = config;
+                this.corals = [];
+                this.coralTypes = ['brain', 'branch', 'table', 'tube', 'fan'];
+                this.coralColors = [
+                    { main: 0xff6b6b, emissive: 0xff4444 },
+                    { main: 0xffa07a, emissive: 0xff8855 },
+                    { main: 0xff69b4, emissive: 0xff4499 },
+                    { main: 0xdda0dd, emissive: 0xcc88cc },
+                    { main: 0xf0e68c, emissive: 0xddcc55 },
+                    { main: 0x40e0d0, emissive: 0x22cccc },
+                    { main: 0xff8c00, emissive: 0xdd6600 }
+                ];
+            }
+            
+            generate(count) {
+                this.dispose();
+                
+                let placed = 0;
+                let attempts = 0;
+                
+                while (placed < count && attempts < count * 5) {
+                    attempts++;
+                    
+                    const x = (Math.random() - 0.5) * 120;
+                    const z = (Math.random() - 0.5) * 120;
+                    const y = this.terrainGen.getTerrainHeight(x, z);
+                    
+                    // 珊瑚偏好浅水和特定地形
+                    if (y > -25 && y < -5) {
+                        const type = this.coralTypes[Math.floor(Math.random() * this.coralTypes.length)];
+                        const colorSet = this.coralColors[Math.floor(Math.random() * this.coralColors.length)];
+                        const scale = 0.6 + Math.random() * 0.8;
+                        
+                        const coral = this.createCoralByType(type, colorSet, scale);
+                        if (coral) {
+                            coral.position.set(x, y + 0.3, z);
+                            coral.rotation.y = Math.random() * Math.PI * 2;
+                            coral.castShadow = true;
+                            coral.receiveShadow = true;
+                            
+                            this.corals.push(coral);
+                            this.scene.add(coral);
+                            placed++;
+                        }
+                    }
+                }
+            }
+            
+            createCoralByType(type, colorSet, scale) {
+                let geometry;
+                
+                switch (type) {
+                    case 'brain':
+                        // 脑纹珊瑚 - 扭曲的球体
+                        geometry = new THREE.IcosahedronGeometry(1, 2);
+                        const positions = geometry.attributes.position.array;
+                        for (let i = 0; i < positions.length; i += 3) {
+                            const noise = Math.sin(positions[i] * 3) * Math.cos(positions[i + 1] * 3) * Math.sin(positions[i + 2] * 3);
+                            positions[i] *= 1 + noise * 0.15;
+                            positions[i + 1] *= 1 + noise * 0.15;
+                            positions[i + 2] *= 1 + noise * 0.15;
+                        }
+                        geometry.computeVertexNormals();
+                        break;
+                        
+                    case 'branch':
+                        // 分支珊瑚
+                        return this.createBranchCoral(colorSet, scale);
+                        
+                    case 'table':
+                        // 桌状珊瑚
+                        geometry = new THREE.CylinderGeometry(2, 0.3, 0.5, 12);
+                        geometry.translate(0, 0.25, 0);
+                        break;
+                        
+                    case 'tube':
+                        // 管状珊瑚
+                        return this.createTubeCoral(colorSet, scale);
+                        
+                    case 'fan':
+                        // 扇形珊瑚
+                        return this.createFanCoral(colorSet, scale);
+                        
+                    default:
+                        geometry = new THREE.IcosahedronGeometry(1, 1);
+                }
+                
+                const material = new THREE.MeshStandardMaterial({
+                    color: colorSet.main,
+                    roughness: 0.6,
+                    metalness: 0.1,
+                    emissive: colorSet.emissive,
+                    emissiveIntensity: 0.15
+                });
+                
+                const mesh = new THREE.Mesh(geometry, material);
+                mesh.scale.setScalar(scale);
+                mesh.userData = { type: 'coral', coralType: type };
+                return mesh;
+            }
+            
+            createBranchCoral(colorSet, scale) {
+                const group = new THREE.Group();
+                
+                // 主干
+                const trunkGeo = new THREE.CylinderGeometry(0.15, 0.25, 2, 6);
+                trunkGeo.translate(0, 1, 0);
+                const material = new THREE.MeshStandardMaterial({
+                    color: colorSet.main,
+                    roughness: 0.7,
+                    emissive: colorSet.emissive,
+                    emissiveIntensity: 0.12
+                });
+                const trunk = new THREE.Mesh(trunkGeo, material);
+                group.add(trunk);
+                
+                // 分支
+                const branchCount = 4 + Math.floor(Math.random() * 4);
+                for (let i = 0; i < branchCount; i++) {
+                    const branchGeo = new THREE.CylinderGeometry(0.05, 0.12, 1.2, 5);
+                    branchGeo.translate(0, 0.6, 0);
+                    const branch = new THREE.Mesh(branchGeo, material);
+                    
+                    branch.position.y = 0.8 + Math.random() * 0.8;
+                    branch.rotation.z = (Math.random() - 0.5) * 1.5;
+                    branch.rotation.x = (Math.random() - 0.5) * 1.5;
+                    
+                    group.add(branch);
+                    
+                    // 子分支
+                    if (Math.random() > 0.5) {
+                        const subBranchGeo = new THREE.CylinderGeometry(0.02, 0.06, 0.6, 4);
+                        subBranchGeo.translate(0, 0.3, 0);
+                        const subBranch = new THREE.Mesh(subBranchGeo, material);
+                        subBranch.position.copy(branch.position);
+                        subBranch.position.y += 0.5;
+                        subBranch.rotation.z = branch.rotation.z + (Math.random() - 0.5) * 0.8;
+                        subBranch.rotation.x = branch.rotation.x + (Math.random() - 0.5) * 0.8;
+                        group.add(subBranch);
+                    }
+                }
+                
+                group.scale.setScalar(scale);
+                group.userData = { type: 'coral', coralType: 'branch' };
+                return group;
+            }
+            
+            createTubeCoral(colorSet, scale) {
+                const group = new THREE.Group();
+                const material = new THREE.MeshStandardMaterial({
+                    color: colorSet.main,
+                    roughness: 0.5,
+                    emissive: colorSet.emissive,
+                    emissiveIntensity: 0.18
+                });
+                
+                const tubeCount = 6 + Math.floor(Math.random() * 6);
+                for (let i = 0; i < tubeCount; i++) {
+                    const height = 0.8 + Math.random() * 1.2;
+                    const radius = 0.08 + Math.random() * 0.06;
+                    const tubeGeo = new THREE.CylinderGeometry(radius * 0.7, radius, height, 8);
+                    tubeGeo.translate(0, height / 2, 0);
+                    
+                    const tube = new THREE.Mesh(tubeGeo, material);
+                    const angle = (i / tubeCount) * Math.PI * 2 + Math.random() * 0.5;
+                    const dist = Math.random() * 0.4;
+                    tube.position.set(Math.cos(angle) * dist, 0, Math.sin(angle) * dist);
+                    tube.rotation.z = (Math.random() - 0.5) * 0.4;
+                    tube.rotation.x = (Math.random() - 0.5) * 0.4;
+                    
+                    group.add(tube);
+                }
+                
+                group.scale.setScalar(scale);
+                group.userData = { type: 'coral', coralType: 'tube' };
+                return group;
+            }
+            
+            createFanCoral(colorSet, scale) {
+                const material = new THREE.MeshStandardMaterial({
+                    color: colorSet.main,
+                    roughness: 0.8,
+                    emissive: colorSet.emissive,
+                    emissiveIntensity: 0.1,
+                    side: THREE.DoubleSide,
+                    transparent: true,
+                    opacity: 0.95
+                });
+                
+                // 创建扇形几何体
+                const fanGeo = new THREE.PlaneGeometry(2, 2.5, 8, 10);
+                const positions = fanGeo.attributes.position.array;
+                
+                for (let i = 0; i < positions.length; i += 3) {
+                    const x = positions[i];
+                    const y = positions[i + 1];
+                    
+                    // 扇形形状
+                    const width = Math.max(0, (y + 1.25) / 2.5 * 1.5);
+                    positions[i] = x * width;
+                    
+                    // 添加波浪
+                    positions[i + 2] = Math.sin(x * 4) * Math.cos(y * 3) * 0.15;
+                }
+                
+                fanGeo.computeVertexNormals();
+                
+                const fan = new THREE.Mesh(fanGeo, material);
+                fan.position.y = 1;
+                fan.scale.setScalar(scale);
+                fan.userData = { type: 'coral', coralType: 'fan' };
+                return fan;
+            }
+            
+            dispose() {
+                this.corals.forEach(coral => {
+                    this.scene.remove(coral);
+                    coral.traverse(child => {
+                        if (child.geometry) child.geometry.dispose();
+                        if (child.material) {
+                            if (Array.isArray(child.material)) {
+                                child.material.forEach(m => m.dispose());
+                            } else {
+                                child.material.dispose();
+                            }
+                        }
+                    });
+                });
+                this.corals = [];
+            }
+        }
+
+
+        // ==================== 高级水下后处理着色器 ====================
+        const AdvancedUnderwaterShader = {
+            uniforms: {
+                tDiffuse: { value: null },
+                time: { value: 0 },
+                fogColor: { value: new THREE.Color(0x001830) },
+                fogDensity: { value: 0.012 },
+                waterColor: { value: new THREE.Color(0x006994) },
+                causticsEnabled: { value: true },
+                depthTexture: { value: null }
+            },
+            vertexShader: `
+                varying vec2 vUv;
+                void main() {
+                    vUv = uv;
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                }
+            `,
+            fragmentShader: `
+                uniform sampler2D tDiffuse;
+                uniform float time;
+                uniform vec3 fogColor;
+                uniform float fogDensity;
+                uniform vec3 waterColor;
+                uniform bool causticsEnabled;
+                varying vec2 vUv;
+                
+                // 噪声函数
+                float hash(vec2 p) {
+                    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+                }
+                
+                float noise(vec2 p) {
+                    vec2 i = floor(p);
+                    vec2 f = fract(p);
+                    f = f * f * (3.0 - 2.0 * f);
+                    float a = hash(i);
+                    float b = hash(i + vec2(1.0, 0.0));
+                    float c = hash(i + vec2(0.0, 1.0));
+                    float d = hash(i + vec2(1.0, 1.0));
+                    return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+                }
+                
+                float fbm(vec2 p) {
+                    float value = 0.0;
+                    float amplitude = 0.5;
+                    for (int i = 0; i < 4; i++) {
+                        value += amplitude * noise(p);
+                        p *= 2.0;
+                        amplitude *= 0.5;
+                    }
+                    return value;
+                }
+                
+                void main() {
+                    vec2 uv = vUv;
+                    
+                    // 水下扭曲效果
+                    float distortion = 0.003;
+                    uv.x += sin(uv.y * 15.0 + time * 0.8) * distortion;
+                    uv.y += cos(uv.x * 12.0 + time * 0.6) * distortion;
+                    
+                    vec4 color = texture2D(tDiffuse, uv);
+                    
+                    // 焦散效果
+                    if (causticsEnabled) {
+                        vec2 causticUv = uv * 25.0 + time * 0.3;
+                        float caustic1 = sin(causticUv.x + fbm(causticUv * 0.5)) * 0.5 + 0.5;
+                        float caustic2 = sin(causticUv.y * 0.8 + fbm(causticUv * 0.7 + 10.0)) * 0.5 + 0.5;
+                        float caustic = caustic1 * caustic2;
+                        caustic = pow(caustic, 3.0) * 0.15;
+                        color.rgb += caustic * vec3(0.4, 0.7, 1.0);
+                    }
+                    
+                    // 水下雾效
+                    float fogFactor = 1.0 - exp(-fogDensity * 8.0);
+                    color.rgb = mix(color.rgb, fogColor, fogFactor * 0.6);
+                    
+                    // 水色滤镜
+                    color.rgb *= vec3(0.75, 0.9, 1.0);
+                    
+                    // 深度感 - 远处更蓝
+                    float depthFactor = length(uv - 0.5) * 0.5;
+                    color.rgb = mix(color.rgb, waterColor, depthFactor * 0.3);
+                    
+                    // 暗角效果
+                    float vignette = 1.0 - length(uv - 0.5) * 0.6;
+                    color.rgb *= smoothstep(0.0, 1.0, vignette);
+                    
+                    // 对比度增强
+                    color.rgb = (color.rgb - 0.5) * 1.1 + 0.5;
+                    
+                    gl_FragColor = color;
+                }
+            `
+        };
+
+        // ==================== 体积光（上帝之光）着色器 ====================
+        const VolumetricLightShader = {
+            uniforms: {
+                tDiffuse: { value: null },
+                lightPosition: { value: new THREE.Vector2(0.5, 0.8) },
+                exposure: { value: 0.4 },
+                decay: { value: 0.96 },
+                density: { value: 0.8 },
+                weight: { value: 0.5 },
+                samples: { value: 60 }
+            },
+            vertexShader: `
+                varying vec2 vUv;
+                void main() {
+                    vUv = uv;
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                }
+            `,
+            fragmentShader: `
+                uniform sampler2D tDiffuse;
+                uniform vec2 lightPosition;
+                uniform float exposure;
+                uniform float decay;
+                uniform float density;
+                uniform float weight;
+                uniform int samples;
+                varying vec2 vUv;
+                
+                void main() {
+                    vec2 delta = vUv - lightPosition;
+                    vec2 deltaStep = delta / float(samples) * density;
+                    
+                    vec3 color = vec3(0.0);
+                    float illuminationDecay = 1.0;
+                    vec2 uv = vUv;
+                    
+                    for (int i = 0; i < 100; i++) {
+                        if (i >= samples) break;
+                        uv -= deltaStep;
+                        vec3 sampleColor = texture2D(tDiffuse, uv).rgb;
+                        sampleColor *= illuminationDecay * weight;
+                        color += sampleColor;
+                        illuminationDecay *= decay;
+                    }
+                    
+                    vec3 originalColor = texture2D(tDiffuse, vUv).rgb;
+                    gl_FragColor = vec4(originalColor + color * exposure, 1.0);
+                }
+            `
+        };
+
+        // ==================== 加载管理器 ====================
+        class LoadingManager {
+            constructor() {
+                this.loadingEl = document.getElementById('loading');
+                this.loadingBar = document.getElementById('loadingBar');
+                this.loadingStatus = document.getElementById('loadingStatus');
+                this.progress = 0;
+                this.stages = [
+                    { name: '初始化系统', weight: 5 },
+                    { name: '生成地形', weight: 25 },
+                    { name: '创建鱼群', weight: 20 },
+                    { name: '种植海草', weight: 15 },
+                    { name: '布置珊瑚', weight: 15 },
+                    { name: '初始化粒子', weight: 10 },
+                    { name: '设置后处理', weight: 10 }
+                ];
+                this.currentStage = 0;
+            }
+            
+            updateProgress(stageProgress) {
+                let totalProgress = 0;
+                for (let i = 0; i < this.currentStage; i++) {
+                    totalProgress += this.stages[i].weight;
+                }
+                totalProgress += this.stages[this.currentStage].weight * stageProgress;
+                
+                const percentage = Math.min(100, Math.round(totalProgress));
+                this.loadingBar.style.width = percentage + '%';
+            }
+            
+            setStage(stageIndex) {
+                this.currentStage = stageIndex;
+                if (this.stages[stageIndex]) {
+                    this.loadingStatus.textContent = this.stages[stageIndex].name + '...';
+                }
+            }
+            
+            complete() {
+                this.loadingBar.style.width = '100%';
+                setTimeout(() => {
+                    this.loadingEl.classList.add('hidden');
+                }, 300);
+            }
+            
+            showError(message) {
+                document.getElementById('errorMessage').textContent = message;
+                document.getElementById('error-panel').style.display = 'block';
+            }
+        }
+
+        // ==================== 主程序 ====================
+        let scene, camera, renderer, composer, controls;
+        let terrainGen, fishSchool, particles, seaweed, corals;
+        let terrainMesh, water;
+        let loadingManager;
+        let isPaused = false;
+        let clock = new THREE.Clock();
+        
+        // 参数控制
+        const params = {
+            fishCount: Math.floor(CONFIG.MAX_FISHES * 0.6),
+            seaweedCount: Math.floor(CONFIG.MAX_SEAWEED * 0.7),
+            coralCount: Math.floor(CONFIG.MAX_CORAL * 0.7),
+            fogDensity: 0.012,
+            bloomStrength: CONFIG.BLOOM_ENABLED ? 0.35 : 0,
+            sunIntensity: 4,
+            causticsEnabled: CONFIG.CAUSTICS_ENABLED,
+            timeScale: 1,
+            showStats: true,
+            regenerate: () => generateWorld(),
+            pause: () => { isPaused = !isPaused; }
+        };
+
+        async function init() {
+            try {
+                loadingManager = new LoadingManager();
+                
+                // 初始化场景
+                loadingManager.setStage(0);
+                loadingManager.updateProgress(0.5);
+                
+                const canvas = document.getElementById('sea3dCanvas');
+                scene = new THREE.Scene();
+                scene.fog = new THREE.FogExp2(0x001525, params.fogDensity);
+                
+                // 相机设置
+                camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 500);
+                camera.position.set(70, 30, 70);
+                
+                // 渲染器设置
+                renderer = new THREE.WebGLRenderer({ 
+                    canvas, 
+                    antialias: true, 
+                    powerPreference: "high-performance",
+                    alpha: false
+                });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                renderer.toneMapping = THREE.ACESFilmicToneMapping;
+                renderer.toneMappingExposure = 1.0;
+                renderer.shadowMap.enabled = true;
+                renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                
+                // 控制器
+                controls = new OrbitControls(camera, renderer.domElement);
+                controls.target.set(0, -12, 0);
+                controls.minDistance = 10;
+                controls.maxDistance = 200;
+                controls.maxPolarAngle = Math.PI / 2.02;
+                controls.enableDamping = true;
+                controls.dampingFactor = 0.05;
+                
+                // 灯光系统
+                setupLighting();
+                
+                // 后处理
+                setupPostProcessing();
+                
+                // 生成世界
+                await generateWorld();
+                
+                // GUI
+                setupGUI();
+                
+                // 事件监听
+                setupEventListeners();
+                
+                // 开始动画
+                animate();
+                
+            } catch (error) {
+                console.error('初始化错误:', error);
+                loadingManager.showError('初始化失败: ' + error.message);
+            }
+        }
+
+        function setupLighting() {
+            // 主光源（模拟阳光穿透水面）
+            const sunLight = new THREE.DirectionalLight(0x66aaff, params.sunIntensity);
+            sunLight.position.set(60, 150, 40);
+            sunLight.castShadow = true;
+            sunLight.shadow.mapSize.set(CONFIG.SHADOW_MAP_SIZE, CONFIG.SHADOW_MAP_SIZE);
+            sunLight.shadow.camera.left = -100;
+            sunLight.shadow.camera.right = 100;
+            sunLight.shadow.camera.top = 100;
+            sunLight.shadow.camera.bottom = -100;
+            sunLight.shadow.camera.near = 10;
+            sunLight.shadow.camera.far = 300;
+            sunLight.shadow.bias = -0.0005;
+            sunLight.shadow.radius = 2;
+            scene.add(sunLight);
+            scene.userData.sunLight = sunLight;
+            
+            // 环境光
+            const ambientLight = new THREE.AmbientLight(0x1a3a5a, 0.6);
+            scene.add(ambientLight);
+            scene.userData.ambientLight = ambientLight;
+            
+            // 体积光（上帝之光）
+            const godRay = new THREE.SpotLight(0x88ccff, 6, 250, Math.PI / 10, 0.6);
+            godRay.position.set(0, 80, 0);
+            godRay.target.position.set(0, -30, 0);
+            scene.add(godRay);
+            scene.add(godRay.target);
+            scene.userData.godRay = godRay;
+            
+            // 补光
+            const fillLight = new THREE.DirectionalLight(0x4488aa, 1);
+            fillLight.position.set(-50, 20, -50);
+            scene.add(fillLight);
+        }
+
+        function setupPostProcessing() {
+            composer = new EffectComposer(renderer);
+            
+            // 渲染通道
+            const renderPass = new RenderPass(scene, camera);
+            composer.addPass(renderPass);
+            
+            // 泛光效果
+            if (CONFIG.BLOOM_ENABLED) {
+                const bloomPass = new UnrealBloomPass(
+                    new THREE.Vector2(window.innerWidth, window.innerHeight),
+                    params.bloomStrength,
+                    0.4,
+                    0.85
+                );
+                composer.addPass(bloomPass);
+                scene.userData.bloomPass = bloomPass;
+            }
+            
+            // 水下效果
+            const underwaterPass = new ShaderPass(AdvancedUnderwaterShader);
+            underwaterPass.uniforms.causticsEnabled.value = CONFIG.CAUSTICS_ENABLED;
+            composer.addPass(underwaterPass);
+            scene.userData.underwaterPass = underwaterPass;
+        }
+
+        async function generateWorld() {
+            loadingManager.setStage(1);
+            
+            // 清理旧资源
+            if (terrainMesh) {
+                scene.remove(terrainMesh);
+                terrainMesh.geometry.dispose();
+                terrainMesh.material.dispose();
+            }
+            if (fishSchool) fishSchool.dispose();
+            if (particles) particles.dispose();
+            if (seaweed) seaweed.dispose();
+            if (corals) corals.dispose();
+            
+            terrainGen = new TerrainGenerator();
+            
+            // 生成地形
+            loadingManager.updateProgress(0.3);
+            terrainMesh = generateTerrain();
+            loadingManager.updateProgress(1);
+            
+            // 创建鱼群
+            loadingManager.setStage(2);
+            await new Promise(r => setTimeout(r, 10));
+            fishSchool = new BoidsFishSchool(scene, terrainGen, CONFIG);
+            fishSchool.createSchool(params.fishCount);
+            loadingManager.updateProgress(1);
+            
+            // 创建海草
+            loadingManager.setStage(3);
+            await new Promise(r => setTimeout(r, 10));
+            seaweed = new GPUSeaweedSystem(scene, terrainGen, CONFIG);
+            seaweed.generate(params.seaweedCount);
+            loadingManager.updateProgress(1);
+            
+            // 创建珊瑚
+            loadingManager.setStage(4);
+            await new Promise(r => setTimeout(r, 10));
+            corals = new DiverseCoralSystem(scene, terrainGen, CONFIG);
+            corals.generate(params.coralCount);
+            loadingManager.updateProgress(1);
+            
+            // 创建粒子
+            loadingManager.setStage(5);
+            await new Promise(r => setTimeout(r, 10));
+            particles = new ParticleSystem (scene, CONFIG);
+            loadingManager.updateProgress(1);
+            
+            // 创建水面
+            if (!water) {
+                loadingManager.setStage(6);
+                createWater();
+            }
+            
+            loadingManager.complete();
+        }
+
+        function generateTerrain() {
+            const geometry = new THREE.PlaneGeometry(
+                CONFIG.TERRAIN_SIZE, 
+                CONFIG.TERRAIN_SIZE, 
+                CONFIG.TERRAIN_SEGMENTS, 
+                CONFIG.TERRAIN_SEGMENTS
+            );
+            geometry.rotateX(-Math.PI / 2);
+            
+            const pos = geometry.attributes.position.array;
+            const colors = new Float32Array(pos.length);
+            
+            // 生成高度
+            for (let i = 0; i < pos.length; i += 3) {
+                const x = pos[i], z = pos[i + 2];
+                pos[i + 1] = terrainGen.getTerrainHeight(x, z);
+            }
+            
+            geometry.computeVertexNormals();
+            
+            // 顶点着色
+            for (let i = 0; i < pos.length; i += 3) {
+                const normal = new THREE.Vector3();
+                normal.fromBufferAttribute(geometry.attributes.normal, i / 3);
+                const color = terrainGen.getTerrainColor(pos[i + 1], normal, pos[i], pos[i + 2]);
+                colors[i] = color.r;
+                colors[i + 1] = color.g;
+                colors[i + 2] = color.b;
+            }
+            
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            
+            const material = new THREE.MeshStandardMaterial({ 
+                vertexColors: true, 
+                roughness: 0.85,
+                metalness: 0.05
+            });
+            
+            const terrain = new THREE.Mesh(geometry, material);
+            terrain.receiveShadow = true;
+            terrain.castShadow = true;
+            scene.add(terrain);
+            return terrain;
+        }
+
+        function createWater() {
+            const waterGeometry = new THREE.PlaneGeometry(300, 300, 64, 64);
+            const waterMaterial = new THREE.MeshPhysicalMaterial({
+                color: 0x006699,
+                roughness: 0.02,
+                metalness: 0.1,
+                transmission: 0.92,
+                thickness: 4,
+                ior: 1.33,
+                transparent: true,
+                opacity: 0.75,
+                side: THREE.DoubleSide
+            });
+            
+            water = new THREE.Mesh(waterGeometry, waterMaterial);
+            water.rotation.x = -Math.PI / 2;
+            water.position.y = 10;
+            scene.add(water);
+        }
+
+        function setupGUI() {
+            const gui = new GUI({ title: '🌊 生态系统控制面板' });
+            
+            const worldFolder = gui.addFolder('🌍 世界设置');
+            worldFolder.add(params, 'regenerate').name('🔄 重新生成世界');
+            worldFolder.add(params, 'pause').name('⏸️ 暂停/继续');
+            worldFolder.add(params, 'timeScale', 0.1, 3, 0.1).name('⏱️ 时间流速');
+            
+            const creatureFolder = gui.addFolder('🐠 生物设置');
+            creatureFolder.add(params, 'fishCount', 10, CONFIG.MAX_FISHES, 1)
+                .name('🐟 鱼群数量')
+                .onChange(v => fishSchool.createSchool(v));
+            creatureFolder.add(params, 'seaweedCount', 20, CONFIG.MAX_SEAWEED, 5)
+                .name('🌿 海草数量')
+                .onChange(v => seaweed.generate(v));
+            creatureFolder.add(params, 'coralCount', 5, CONFIG.MAX_CORAL, 1)
+                .name('🪸 珊瑚数量')
+                .onChange(v => corals.generate(v));
+            
+            const visualFolder = gui.addFolder('👁️ 视觉效果');
+            visualFolder.add(params, 'fogDensity', 0.005, 0.04)
+                .name('🌫️ 雾气浓度')
+                .onChange(v => scene.fog.density = v);
+            visualFolder.add(params, 'bloomStrength', 0, 1)
+                .name('✨ 光晕强度')
+                .onChange(v => {
+                    if (scene.userData.bloomPass) {
+                        scene.userData.bloomPass.strength = v;
+                    }
+                });
+            visualFolder.add(params, 'sunIntensity', 1, 8)
+                .name('☀️ 阳光强度')
+                .onChange(v => {
+                    if (scene.userData.sunLight) {
+                        scene.userData.sunLight.intensity = v;
+                    }
+                });
+            if (CONFIG.CAUSTICS_ENABLED) {
+                visualFolder.add(params, 'causticsEnabled')
+                    .name('💧 焦散效果')
+                    .onChange(v => {
+                        if (scene.userData.underwaterPass) {
+                            scene.userData.underwaterPass.uniforms.causticsEnabled.value = v;
+                        }
+                    });
+            }
+            
+            const infoFolder = gui.addFolder('ℹ️ 系统信息');
+            infoFolder.add(configManager, 'currentTier')
+                .name('设备等级')
+                .disable();
+            infoFolder.add(perfMonitor, 'adaptiveQuality')
+                .name('自适应质量');
+            
+            worldFolder.open();
+        }
+
+        function setupEventListeners() {
+            // 窗口大小调整
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                composer.setSize(window.innerWidth, window.innerHeight);
+            });
+            
+            // 键盘控制
+            window.addEventListener('keydown', (e) => {
+                if (e.code === 'Space') {
+                    isPaused = !isPaused;
+                }
+            });
+            
+            // 鼠标交互 - 点击鱼群
+            const raycaster = new THREE.Raycaster();
+            const mouse = new THREE.Vector2();
+            
+            window.addEventListener('click', (e) => {
+                if (e.target.closest('.lil-gui')) return;
+                
+                mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+                
+                raycaster.setFromCamera(mouse, camera);
+                
+                // 创建交互点
+                const targetPoint = new THREE.Vector3();
+                const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+                raycaster.ray.intersectPlane(plane, targetPoint);
+                
+                if (targetPoint && fishSchool) {
+                    fishSchool.addFleeTarget(targetPoint);
+                }
+            });
+            
+            // 性能监控更新
+            setInterval(() => {
+                updatePerformanceDisplay();
+            }, 500);
+        }
+
+        function updatePerformanceDisplay() {
+            const fpsEl = document.getElementById('fpsValue');
+            const frameTimeEl = document.getElementById('frameTime');
+            const fishCountEl = document.getElementById('fishCount');
+            const drawCallsEl = document.getElementById('drawCalls');
+            const qualityEl = document.getElementById('qualityLevel');
+            
+            if (fpsEl) {
+                fpsEl.textContent = perfMonitor.fps;
+                fpsEl.className = 'metric-value ' + perfMonitor.getFPSColor();
+            }
+            if (frameTimeEl) frameTimeEl.textContent = perfMonitor.frameTime.toFixed(2) + 'ms';
+            if (fishCountEl) fishCountEl.textContent = fishSchool ? fishSchool.fishes.length : 0;
+            if (drawCallsEl) drawCallsEl.textContent = renderer.info.render.calls;
+            if (qualityEl) qualityEl.textContent = configManager.getQualityLabel();
+        }
+
+        function updateEcoStatus() {
+            // 计算生态系统健康度
+            const fishRatio = params.fishCount / CONFIG.MAX_FISHES;
+            const seaweedRatio = params.seaweedCount / CONFIG.MAX_SEAWEED;
+            const coralRatio = params.coralCount / CONFIG.MAX_CORAL;
+            
+            const health = Math.round((fishRatio * 0.4 + seaweedRatio * 0.3 + coralRatio * 0.3) * 100);
+            
+            const ecoFill = document.getElementById('ecoFill');
+            const ecoValue = document.getElementById('ecoValue');
+            
+            if (ecoFill && ecoValue) {
+                ecoFill.style.width = health + '%';
+                
+                let status = '健康';
+                let color = '#44aa66';
+                if (health < 40) {
+                    status = '濒危';
+                    color = '#ff6666';
+                } else if (health < 70) {
+                    status = '一般';
+                    color = '#ffaa44';
+                }
+                
+                ecoFill.style.background = `linear-gradient(90deg, ${color}, ${color}dd)`;
+                ecoValue.textContent = health + '% - ' + status;
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            if (isPaused) return;
+            
+            const delta = clock.getDelta() * params.timeScale;
+            const time = clock.getElapsedTime();
+            
+            // 性能监控
+            const perfStatus = perfMonitor.update();
+            if (perfStatus === 'downgrade' && perfMonitor.adaptiveQuality) {
+                if (configManager.downgrade()) {
+                    console.log('性能不足，降级到:', configManager.currentTier);
+                    generateWorld();
+                }
+            }
+            perfMonitor.updateStats(renderer);
+            
+            // 更新系统
+            if (fishSchool) fishSchool.update(delta, time);
+            if (particles) particles.update(time, delta);
+            if (seaweed) seaweed.update(time);
+            
+            // 动态光照
+            if (scene.userData.godRay) {
+                scene.userData.godRay.position.x = Math.sin(time * 0.15) * 25;
+                scene.userData.godRay.position.z = Math.cos(time * 0.15) * 25;
+            }
+            
+            // 后处理uniforms更新
+            if (scene.userData.underwaterPass) {
+                scene.userData.underwaterPass.uniforms.time.value = time;
+            }
+            
+            // 水面动画
+            if (water) {
+                water.position.y = 10 + Math.sin(time * 0.5) * 0.3;
+            }
+            
+            controls.update();
+            composer.render();
+            
+            // 定期更新生态状态
+            if (Math.floor(time) % 5 === 0) {
+                updateEcoStatus();
+            }
+        }
+
+        // 启动
+        init();
+    </script>
+</body>
+</html>
