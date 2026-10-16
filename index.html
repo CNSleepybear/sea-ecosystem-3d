@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>海底生态系统生成器</title>
+    <meta name="theme-color" content="#063c57">
+    <meta name="description" content="漫游通透的珊瑚礁谷，观察鱼群、蝠鲼与海龟，感受光影与洋流的缓慢变化。">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='10' fill='%23063c57'/%3E%3Cpath d='M6 22q8-12 18 0L34 14v16l-10-8q-10 12-18 0' fill='%23dce3ac'/%3E%3C/svg%3E">
+    <title>潮汐之间 · 海底生态漫游</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
@@ -250,6 +253,7 @@
             }
         }
     </style>
+    <link rel="stylesheet" href="./ocean-ui.css">
 </head>
 <body>
     <!-- 加载界面 -->
@@ -259,7 +263,7 @@
             <div class="spinner"></div>
             <div class="spinner"></div>
         </div>
-        <div class="loading-text">🌊 正在生成海底世界</div>
+        <div class="loading-text">潜入潮汐之间</div>
         <div class="loading-progress">
             <div class="loading-bar" id="loadingBar"></div>
         </div>
@@ -274,19 +278,14 @@
     </div>
     
     <!-- 信息面板 -->
-    <div id="info">
-        <h3>🌊 海底生态系统</h3>
-        <div class="controls">
-            <span>🖱️ 左键</span> 旋转视角<br>
-            <span>🖱️ 滚轮</span> 缩放场景<br>
-            <span>🖱️ 右键</span> 平移视角<br>
-            <span>👆 点击</span> 与鱼群互动<br>
-            <span>⌨️ 空格</span> 暂停/继续
-        </div>
-    </div>
+    <header id="info">
+        <div class="eyebrow">Between the tides / Ocean sanctuary</div>
+        <h3>潮汐之间</h3>
+        <div class="location-line" id="locationLabel">珊瑚礁谷 · 日光穿过浅海</div>
+    </header>
     
     <!-- 性能监控 -->
-    <div id="performance">
+    <div id="performance" aria-label="实时渲染统计">
         <div class="metric">
             <span class="metric-label">FPS:</span>
             <span class="metric-value" id="fpsValue">--</span>
@@ -311,14 +310,50 @@
     
     <!-- 生态状态 -->
     <div id="eco-status">
-        <div class="eco-title">🌿 生态系统健康度</div>
+        <div class="eco-title">REEF VITALITY / 礁区活力</div>
         <div class="eco-bar">
             <div class="eco-fill" id="ecoFill"></div>
         </div>
         <div class="eco-value" id="ecoValue">85% - 健康</div>
     </div>
     
-    <canvas id="sea3dCanvas"></canvas>
+    <nav class="ocean-tools" aria-label="漫游工具">
+        <button class="tool-button" id="guideButton" title="海洋手记" aria-label="海洋手记" aria-expanded="false">
+            <svg viewBox="0 0 24 24"><path d="M3 4h7l2 2 2-2h7v15h-7l-2 2-2-2H3zM12 6v15M6 8h3M15 8h3M6 12h3M15 12h3"/></svg>
+        </button>
+        <button class="tool-button" id="tourButton" title="缓慢环游" aria-label="缓慢环游" aria-pressed="false">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="m15 8-2 5-5 2 2-5z"/></svg>
+        </button>
+        <button class="tool-button" id="pauseButton" title="暂停生态 · 空格" aria-label="暂停生态" aria-pressed="false">
+            <svg viewBox="0 0 24 24"><path d="M9 5v14M15 5v14"/></svg>
+        </button>
+        <button class="tool-button" id="photoButton" title="纯净观景 · P" aria-label="进入纯净观景模式">
+            <svg viewBox="0 0 24 24"><path d="M3 7h5l2-3h4l2 3h5v13H3z"/><circle cx="12" cy="13" r="4"/></svg>
+        </button>
+        <button class="tool-button" id="settingsButton" title="生态与画质" aria-label="生态与画质设置" aria-expanded="false">
+            <svg viewBox="0 0 24 24"><path d="M5 3v18M12 3v18M19 3v18M2 8h6M9 16h6M16 10h6"/></svg>
+        </button>
+        <button class="tool-button" id="statsButton" title="渲染统计" aria-label="渲染统计" aria-expanded="false">
+            <svg viewBox="0 0 24 24"><path d="M4 20V12M10 20V7M16 20V3M22 20H2"/></svg>
+        </button>
+    </nav>
+    <aside class="field-guide" id="fieldGuide" hidden aria-label="海洋手记">
+        <div class="eyebrow">Field notes / 01</div>
+        <h2>一座会呼吸的礁</h2>
+        <p>光落在沙纹上，鱼群沿着洋流转弯。放慢一点，看看那些路过的生命。</p>
+        <div class="guide-species">礁鱼群 <span>REEF FISH · 群游</span></div>
+        <div class="guide-species">蝠鲼 <span>MANTA RAY · 滑翔</span></div>
+        <div class="guide-species">海龟 <span>SEA TURTLE · 巡游</span></div>
+        <details><summary>漫游操作</summary><p><kbd>拖拽</kbd> 环视 · <kbd>滚轮 / 双指</kbd> 缩放<br><kbd>右键拖拽</kbd> 平移 · <kbd>轻点鱼群</kbd> 互动<br><kbd>空格</kbd> 暂停 · <kbd>P</kbd> 纯净观景<br><kbd>R</kbd> 返回初始视角 · <kbd>Esc</kbd> 关闭面板</p></details>
+    </aside>
+    <nav class="biome-nav" aria-label="光影氛围">
+        <button class="biome-button" data-mood="day" aria-pressed="true"><small>01</small>日光礁谷</button>
+        <button class="biome-button" data-mood="dusk" aria-pressed="false"><small>02</small>暮色海湾</button>
+        <button class="biome-button" data-mood="deep" aria-pressed="false"><small>03</small>荧光深蓝</button>
+    </nav>
+    <div class="controls-hint" id="controlsHint">拖拽环视 · 滚轮潜入 · 轻点鱼群</div>
+    <div class="photo-note">纯净观景 · 按 P / Esc 或双击返回</div>
+    <canvas id="sea3dCanvas" aria-label="交互式三维海底生态场景"></canvas>
 
     <script type="importmap">
     {
@@ -338,6 +373,9 @@
         import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
         import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
         import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+        import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+        import { createFishGeometry, createCoral, sampleReefPoint, createTerrainMaterial, createSeaweedMaterial, decorateReef } from './ocean-art.js';
+        import { setupOceanUI } from './ocean-ui.js';
 
         // ==================== 配置管理器 ====================
         class ConfigManager {
@@ -444,7 +482,7 @@
                 const currentIndex = tiers.indexOf(this.currentTier);
                 if (currentIndex < tiers.length - 1) {
                     this.currentTier = tiers[currentIndex + 1];
-                    this.CONFIG = { ...this.configs[this.currentTier] };
+                    Object.assign(this.CONFIG, this.configs[this.currentTier]);
                     return true;
                 }
                 return false;
@@ -620,7 +658,7 @@
                 
                 // 随机置换
                 const permutation = [...Array(256)].map((_, i) => i);
-                let seedVal = seed * 2147483647;
+                let seedVal = Math.floor(Math.abs(seed * 2147483647)) % 2147483646 + 1;
                 for (let i = 255; i > 0; i--) {
                     seedVal = (seedVal * 16807) % 2147483647;
                     const j = seedVal % (i + 1);
@@ -711,30 +749,11 @@
                     }
                 }
                 
-                const scale = 0.012;
-                
-                // 基础地形 - 大陆架
-                let height = this.baseNoise.fbm(x * scale, 0, z * scale, 5) * 25;
-                
-                // 山脊 - 海底山脉
-                const ridge = 1 - Math.abs(this.ridgeNoise.noise(x * scale * 0.4, 0, z * scale * 0.4));
-                height += ridge * ridge * 12;
-                
-                // 细节 - 小起伏
-                height += this.detailNoise.noise(x * scale * 3, 0, z * scale * 3) * 3;
-                height += this.detailNoise.noise(x * scale * 6, 0, z * scale * 6) * 1;
-                
-                // 侵蚀效果
-                const erosion = this.erosionNoise.fbm(x * 0.006, z * 0.006, 0, 3);
-                height *= (1 - erosion * 0.25);
-                
-                // 珊瑚礁区域
-                const coralArea = this.coralNoise.fbm(x * 0.02, z * 0.02, 0, 2);
-                if (coralArea > 0.3) {
-                    height += coralArea * 2;
-                }
-                
-                const result = -height - 15;
+                const channel = x - Math.sin(z * 0.035) * 10;
+                const banks = 1 - Math.exp(-channel * channel / 330);
+                const shelves = Math.sin(z * 0.045 + 0.6) * 1.4;
+                const detail = this.baseNoise.fbm(x * 0.035, 0, z * 0.035, 3) * 2.6;
+                const result = -29 + banks * 8 + shelves + detail;
                 
                 // 缓存结果
                 if (this.cacheEnabled && this.heightCache.size < 50000) {
@@ -746,13 +765,13 @@
             
             getTerrainColor(height, normal, x, z) {
                 // 多层纹理混合
-                const sandColor = new THREE.Color(0xC4A574);
-                const rockColor = new THREE.Color(0x5A5A6A);
-                const deepColor = new THREE.Color(0x2A2A3A);
-                const coralColor = new THREE.Color(0x8B7355);
+                const sandColor = new THREE.Color(0xbdb994);
+                const rockColor = new THREE.Color(0x587b73);
+                const deepColor = new THREE.Color(0x8baba7);
+                const coralColor = new THREE.Color(0x8a9b71);
                 
                 const depth = -height;
-                const t = THREE.MathUtils.smoothstep(depth, 5, 35);
+                const t = THREE.MathUtils.smoothstep(depth, 23, 42) * 0.45;
                 const slope = 1 - normal.y;
                 
                 // 基础颜色混合
@@ -884,24 +903,24 @@
                 this.dispose();
                 
                 // 创建鱼类几何体
-                let geometry;
-                if (CONFIG.FISH_DETAIL === 'high') {
-                    geometry = FishModelGenerator.createFishGeometry('high');
-                } else if (CONFIG.FISH_DETAIL === 'medium') {
-                    geometry = new THREE.ConeGeometry(0.35, 1.4, 8);
-                    geometry.rotateX(Math.PI / 2);
-                } else {
-                    geometry = new THREE.ConeGeometry(0.3, 1.2, 6);
-                    geometry.rotateX(Math.PI / 2);
-                }
+                const geometry = createFishGeometry(CONFIG.FISH_DETAIL);
                 
                 // 材质优化
                 const material = new THREE.MeshStandardMaterial({
                     vertexColors: true,
-                    roughness: 0.35,
-                    metalness: 0.25,
-                    envMapIntensity: 0.8
+                    roughness: 0.48,
+                    metalness: 0.06,
+                    side: THREE.DoubleSide
                 });
+                material.onBeforeCompile = shader => {
+                    shader.uniforms.swimTime = reefUniforms.time;
+                    shader.vertexShader = 'uniform float swimTime;\n' + shader.vertexShader;
+                    shader.vertexShader = shader.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
+                        float phase = instanceMatrix[3][0] * 0.3 + instanceMatrix[3][2] * 0.4;
+                        float tailWeight = smoothstep(0.2, 1.6, -position.z);
+                        transformed.x += sin(swimTime * 7.0 + phase + position.z * 2.0) * tailWeight * 0.2;
+                    `);
+                };
                 
                 this.instancedMesh = new THREE.InstancedMesh(geometry, material, count);
                 this.instancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
@@ -912,6 +931,8 @@
                 this.velocities = [];
                 this.tailPhases = [];
                 this.swimSpeeds = [];
+                this.sizes = [];
+                this.schoolIds = [];
                 
                 // 生成多种鱼群类型
                 const schoolCount = Math.ceil(count / 15);
@@ -920,16 +941,14 @@
                 for (let s = 0; s < schoolCount; s++) {
                     schools.push({
                         center: new THREE.Vector3(
-                            (Math.random() - 0.5) * 60,
-                            -Math.random() * 20 - 10,
-                            (Math.random() - 0.5) * 60
+                            (Math.random() - 0.5) * 48,
+                            -Math.random() * 10 - 11,
+                            (Math.random() - 0.5) * 40 - 5
                         ),
-                        color: new THREE.Color().setHSL(0.45 + Math.random() * 0.2, 0.7 + Math.random() * 0.2, 0.4 + Math.random() * 0.2),
+                        color: new THREE.Color([0xf3c65f, 0x73d4cd, 0xe79b73, 0xa9cddd, 0xb6c9f0][s % 5]),
                         size: 0.7 + Math.random() * 0.6
                     });
                 }
-                
-                const colorAttr = new Float32Array(count * 3);
                 
                 for (let i = 0; i < count; i++) {
                     const school = schools[Math.floor(i / 15) % schools.length];
@@ -956,17 +975,24 @@
                     // 颜色变化
                     const colorVar = school.color.clone();
                     colorVar.offsetHSL(0, (Math.random() - 0.5) * 0.1, (Math.random() - 0.5) * 0.1);
-                    colorAttr[i * 3] = colorVar.r;
-                    colorAttr[i * 3 + 1] = colorVar.g;
-                    colorAttr[i * 3 + 2] = colorVar.b;
+                    this.instancedMesh.setColorAt(i, colorVar);
+                    this.sizes.push(school.size);
+                    this.schoolIds.push(Math.floor(i / 15) % schools.length);
                     
                     // 动画参数
                     this.tailPhases.push(Math.random() * Math.PI * 2);
                     this.swimSpeeds.push(0.8 + Math.random() * 0.4);
+                    this.dummy.position.copy(pos);
+                    this.dummy.lookAt(pos.clone().add(vel));
+                    this.dummy.scale.setScalar(school.size);
+                    this.dummy.updateMatrix();
+                    this.instancedMesh.setMatrixAt(i, this.dummy.matrix);
                 }
                 
-                geometry.setAttribute('color', new THREE.InstancedBufferAttribute(colorAttr, 3));
+                this.instancedMesh.instanceMatrix.needsUpdate = true;
+                this.instancedMesh.instanceColor.needsUpdate = true;
                 this.scene.add(this.instancedMesh);
+                this.schoolCenters = schools.map(school => school.center);
                 
                 // 初始化空间网格
                 this.updateSpatialGrid();
@@ -1002,6 +1028,14 @@
                     const coh = this.cohesion(i, neighbors).multiplyScalar(1.0);
                     const bounds = this.boundaryForce(pos).multiplyScalar(2.5);
                     const terrain = this.terrainAvoidance(pos).multiplyScalar(3.0);
+                    const schoolId = this.schoolIds[i];
+                    const origin = this.schoolCenters[schoolId];
+                    const destination = new THREE.Vector3(
+                        origin.x + Math.sin(time * 0.045 + schoolId * 2) * 7,
+                        origin.y + Math.sin(time * 0.07 + schoolId) * 1.8,
+                        origin.z + Math.cos(time * 0.045 + schoolId * 2) * 7
+                    );
+                    const drift = destination.sub(pos).multiplyScalar(0.00024).clampLength(0, this.maxForce);
                     
                     // 逃避行为
                     let flee = new THREE.Vector3();
@@ -1014,7 +1048,7 @@
                     }
                     
                     // 应用力
-                    vel.add(sep).add(ali).add(coh).add(bounds).add(terrain).add(flee);
+                    vel.add(sep).add(ali).add(coh).add(bounds).add(terrain).add(flee).add(drift);
                     
                     // 限制速度
                     const speed = vel.length();
@@ -1029,6 +1063,7 @@
                     
                     // 更新实例矩阵
                     this.dummy.position.copy(pos);
+                    this.dummy.scale.setScalar(this.sizes[i]);
                     if (vel.lengthSq() > 0.0001) {
                         this.dummy.lookAt(pos.clone().add(vel));
                     }
@@ -1077,6 +1112,7 @@
                 
                 for (const { obj: otherPos, index: otherIndex } of neighbors) {
                     if (otherIndex === index) continue;
+                    if (this.schoolIds[otherIndex] !== this.schoolIds[index]) continue;
                     if (pos.distanceTo(otherPos) < this.alignmentDist) {
                         avgVel.add(this.velocities[otherIndex]);
                         count++;
@@ -1098,6 +1134,7 @@
                 
                 for (const { obj: otherPos, index: otherIndex } of neighbors) {
                     if (otherIndex === index) continue;
+                    if (this.schoolIds[otherIndex] !== this.schoolIds[index]) continue;
                     if (pos.distanceTo(otherPos) < this.cohesionDist) {
                         center.add(otherPos);
                         count++;
@@ -1156,6 +1193,7 @@
             dispose() {
                 if (this.instancedMesh) {
                     this.scene.remove(this.instancedMesh);
+                    this.instancedMesh.dispose();
                     if (this.instancedMesh.geometry) this.instancedMesh.geometry.dispose();
                     if (this.instancedMesh.material) this.instancedMesh.material.dispose();
                     this.instancedMesh = null;
@@ -1415,11 +1453,19 @@
             
             generate(count) {
                 this.dispose();
+                count *= 3;
                 
                 // 创建带弯曲的海草几何体
                 const segments = 12;
-                const geometry = new THREE.CylinderGeometry(0.03, 0.12, 4, 5, segments, true);
+                const geometry = new THREE.PlaneGeometry(0.55, 4, 1, segments);
                 geometry.translate(0, 2, 0);
+                const bladePositions = geometry.attributes.position;
+                for (let vertex = 0; vertex < bladePositions.count; vertex++) {
+                    const height = bladePositions.getY(vertex) / 4;
+                    bladePositions.setX(vertex, bladePositions.getX(vertex) * (0.1 + Math.sin(height * Math.PI) * 0.9));
+                    bladePositions.setZ(vertex, Math.sin(height * 4) * 0.13);
+                }
+                geometry.computeVertexNormals();
                 
                 // 添加顶点属性用于动画
                 const positions = geometry.attributes.position.array;
@@ -1434,60 +1480,7 @@
                 geometry.setAttribute('bendFactor', new THREE.BufferAttribute(bendFactors, 1));
                 
                 // 自定义着色器材质 - GPU动画
-                const material = new THREE.ShaderMaterial({
-                    uniforms: {
-                        time: { value: 0 },
-                        baseColor: { value: new THREE.Color(0x2d6a4f) },
-                        tipColor: { value: new THREE.Color(0x52b788) },
-                        swayStrength: { value: 0.3 }
-                    },
-                    vertexShader: `
-                        attribute float bendFactor;
-                        uniform float time;
-                        uniform float swayStrength;
-                        varying vec2 vUv;
-                        varying float vHeight;
-                        
-                        void main() {
-                            vUv = uv;
-                            vHeight = position.y / 4.0;
-                            
-                            vec3 pos = position;
-                            
-                            // GPU顶点动画
-                            float sway = sin(time * 1.5 + instanceMatrix[3][0] * 0.5 + instanceMatrix[3][2] * 0.3) * swayStrength;
-                            float secondarySway = sin(time * 2.3 + instanceMatrix[3][0] * 0.8) * swayStrength * 0.3;
-                            
-                            pos.x += (sway + secondarySway) * bendFactor;
-                            pos.z += cos(time * 1.2 + instanceMatrix[3][2] * 0.5) * swayStrength * 0.5 * bendFactor;
-                            
-                            // 添加扭曲效果
-                            float twist = sin(time * 0.8 + position.y * 2.0) * 0.1 * bendFactor;
-                            pos.x += twist;
-                            
-                            vec4 mvPosition = modelViewMatrix * instanceMatrix * vec4(pos, 1.0);
-                            gl_Position = projectionMatrix * mvPosition;
-                        }
-                    `,
-                    fragmentShader: `
-                        uniform vec3 baseColor;
-                        uniform vec3 tipColor;
-                        varying vec2 vUv;
-                        varying float vHeight;
-                        
-                        void main() {
-                            // 从底部到顶部的颜色渐变
-                            vec3 color = mix(baseColor, tipColor, vHeight * 0.7);
-                            
-                            // 添加简单的光照
-                            float light = 0.6 + 0.4 * sin(vUv.x * 3.14159);
-                            color *= light;
-                            
-                            gl_FragColor = vec4(color, 1.0);
-                        }
-                    `,
-                    side: THREE.DoubleSide
-                });
+                const material = createSeaweedMaterial(reefUniforms);
                 
                 this.instancedMesh = new THREE.InstancedMesh(geometry, material, count);
                 this.instancedMesh.castShadow = true;
@@ -1502,15 +1495,14 @@
                 while (placed < count && attempts < count * 3) {
                     attempts++;
                     
-                    const x = (Math.random() - 0.5) * 140;
-                    const z = (Math.random() - 0.5) * 140;
+                    const [x, z] = sampleReefPoint(Math.floor(placed / 15), 15);
                     const y = this.terrainGen.getTerrainHeight(x, z);
                     
                     // 只在特定深度范围放置海草
                     if (y < -8 && y > -40) {
-                        const height = 0.7 + Math.random() * 0.8;
+                        const height = 0.7 + Math.random() * 1.2;
                         dummy.position.set(x, y, z);
-                        dummy.scale.set(0.8 + Math.random() * 0.4, height, 0.8 + Math.random() * 0.4);
+                        dummy.scale.set(0.8 + Math.random() * 0.7, height, 1);
                         dummy.rotation.y = Math.random() * Math.PI * 2;
                         dummy.updateMatrix();
                         
@@ -1532,13 +1524,14 @@
             
             update(time) {
                 if (this.instancedMesh) {
-                    this.instancedMesh.material.uniforms.time.value = time;
+                    reefUniforms.time.value = time;
                 }
             }
             
             dispose() {
                 if (this.instancedMesh) {
                     this.scene.remove(this.instancedMesh);
+                    this.instancedMesh.dispose();
                     if (this.instancedMesh.geometry) this.instancedMesh.geometry.dispose();
                     if (this.instancedMesh.material) this.instancedMesh.material.dispose();
                     this.instancedMesh = null;
@@ -1556,47 +1549,39 @@
                 this.corals = [];
                 this.coralTypes = ['brain', 'branch', 'table', 'tube', 'fan'];
                 this.coralColors = [
-                    { main: 0xff6b6b, emissive: 0xff4444 },
-                    { main: 0xffa07a, emissive: 0xff8855 },
-                    { main: 0xff69b4, emissive: 0xff4499 },
-                    { main: 0xdda0dd, emissive: 0xcc88cc },
-                    { main: 0xf0e68c, emissive: 0xddcc55 },
-                    { main: 0x40e0d0, emissive: 0x22cccc },
-                    { main: 0xff8c00, emissive: 0xdd6600 }
+                    { main: 0xcc685c, emissive: 0xff7564 },
+                    { main: 0xdc9371, emissive: 0xffa570 },
+                    { main: 0xb66f91, emissive: 0xee83c2 },
+                    { main: 0x9486bb, emissive: 0xbca4f5 },
+                    { main: 0xcfb86c, emissive: 0xffdd83 },
+                    { main: 0x439f95, emissive: 0x64f1d3 },
+                    { main: 0xcd874a, emissive: 0xffb168 }
                 ];
             }
             
             generate(count) {
                 this.dispose();
-                
-                let placed = 0;
-                let attempts = 0;
-                
-                while (placed < count && attempts < count * 5) {
-                    attempts++;
-                    
-                    const x = (Math.random() - 0.5) * 120;
-                    const z = (Math.random() - 0.5) * 120;
-                    const y = this.terrainGen.getTerrainHeight(x, z);
-                    
-                    // 珊瑚偏好浅水和特定地形
-                    if (y > -25 && y < -5) {
-                        const type = this.coralTypes[Math.floor(Math.random() * this.coralTypes.length)];
-                        const colorSet = this.coralColors[Math.floor(Math.random() * this.coralColors.length)];
-                        const scale = 0.6 + Math.random() * 0.8;
-                        
-                        const coral = this.createCoralByType(type, colorSet, scale);
-                        if (coral) {
-                            coral.position.set(x, y + 0.3, z);
-                            coral.rotation.y = Math.random() * Math.PI * 2;
-                            coral.castShadow = true;
-                            coral.receiveShadow = true;
-                            
-                            this.corals.push(coral);
-                            this.scene.add(coral);
-                            placed++;
-                        }
+                const dummy = new THREE.Object3D();
+                for (let species = 0; species < this.coralTypes.length; species++) {
+                    const template = createCoral(this.coralTypes[species], this.coralColors[species], 1);
+                    const colonies = Math.ceil(count * 3 / this.coralTypes.length);
+                    const mesh = new THREE.InstancedMesh(template.geometry, template.material, colonies);
+                    mesh.castShadow = true;
+                    mesh.receiveShadow = true;
+                    mesh.userData = template.userData;
+                    for (let colony = 0; colony < colonies; colony++) {
+                        const [x, z] = sampleReefPoint(colony + species, 11);
+                        const y = this.terrainGen.getTerrainHeight(x, z);
+                        dummy.position.set(x, y + 0.1, z);
+                        dummy.rotation.set(0, Math.random() * Math.PI * 2, 0);
+                        const size = colony < 2 ? 1.5 + Math.random() * 0.6 : 0.5 + Math.random() * 0.9;
+                        dummy.scale.setScalar(size);
+                        dummy.updateMatrix();
+                        mesh.setMatrixAt(colony, dummy.matrix);
                     }
+                    mesh.instanceMatrix.needsUpdate = true;
+                    this.corals.push(mesh);
+                    this.scene.add(mesh);
                 }
             }
             
@@ -1769,6 +1754,7 @@
             dispose() {
                 this.corals.forEach(coral => {
                     this.scene.remove(coral);
+                    if (coral.isInstancedMesh) coral.dispose();
                     coral.traverse(child => {
                         if (child.geometry) child.geometry.dispose();
                         if (child.material) {
@@ -1790,9 +1776,9 @@
             uniforms: {
                 tDiffuse: { value: null },
                 time: { value: 0 },
-                fogColor: { value: new THREE.Color(0x001830) },
-                fogDensity: { value: 0.012 },
-                waterColor: { value: new THREE.Color(0x006994) },
+                fogColor: { value: new THREE.Color(0x247b89) },
+                fogDensity: { value: 0.006 },
+                waterColor: { value: new THREE.Color(0x247b89) },
                 causticsEnabled: { value: true },
                 depthTexture: { value: null }
             },
@@ -1843,39 +1829,15 @@
                     vec2 uv = vUv;
                     
                     // 水下扭曲效果
-                    float distortion = 0.003;
+                    float distortion = 0.0007;
                     uv.x += sin(uv.y * 15.0 + time * 0.8) * distortion;
                     uv.y += cos(uv.x * 12.0 + time * 0.6) * distortion;
                     
                     vec4 color = texture2D(tDiffuse, uv);
                     
-                    // 焦散效果
-                    if (causticsEnabled) {
-                        vec2 causticUv = uv * 25.0 + time * 0.3;
-                        float caustic1 = sin(causticUv.x + fbm(causticUv * 0.5)) * 0.5 + 0.5;
-                        float caustic2 = sin(causticUv.y * 0.8 + fbm(causticUv * 0.7 + 10.0)) * 0.5 + 0.5;
-                        float caustic = caustic1 * caustic2;
-                        caustic = pow(caustic, 3.0) * 0.15;
-                        color.rgb += caustic * vec3(0.4, 0.7, 1.0);
-                    }
-                    
-                    // 水下雾效
-                    float fogFactor = 1.0 - exp(-fogDensity * 8.0);
-                    color.rgb = mix(color.rgb, fogColor, fogFactor * 0.6);
-                    
-                    // 水色滤镜
-                    color.rgb *= vec3(0.75, 0.9, 1.0);
-                    
-                    // 深度感 - 远处更蓝
-                    float depthFactor = length(uv - 0.5) * 0.5;
-                    color.rgb = mix(color.rgb, waterColor, depthFactor * 0.3);
-                    
-                    // 暗角效果
-                    float vignette = 1.0 - length(uv - 0.5) * 0.6;
-                    color.rgb *= smoothstep(0.0, 1.0, vignette);
-                    
-                    // 对比度增强
-                    color.rgb = (color.rgb - 0.5) * 1.1 + 0.5;
+                    float vignette = 1.0 - smoothstep(0.2, 0.9, length(vUv - 0.5));
+                    color.rgb *= mix(0.91, 1.0, vignette);
+                    color.rgb *= vec3(0.98, 1.015, 1.025);
                     
                     gl_FragColor = color;
                 }
@@ -1987,23 +1949,30 @@
         let scene, camera, renderer, composer, controls;
         let terrainGen, fishSchool, particles, seaweed, corals;
         let terrainMesh, water;
+        let reefArt, oceanUI, gui;
+        let generating = false;
+        let simulationTime = 0;
+        const reefUniforms = {
+            time: { value: 0 }, caustics: { value: 1 },
+            glow: { value: 0.055 }, ray: { value: 1 }
+        };
         let loadingManager;
         let isPaused = false;
         let clock = new THREE.Clock();
         
         // 参数控制
         const params = {
-            fishCount: Math.floor(CONFIG.MAX_FISHES * 0.6),
-            seaweedCount: Math.floor(CONFIG.MAX_SEAWEED * 0.7),
-            coralCount: Math.floor(CONFIG.MAX_CORAL * 0.7),
-            fogDensity: 0.012,
-            bloomStrength: CONFIG.BLOOM_ENABLED ? 0.35 : 0,
-            sunIntensity: 4,
+            fishCount: CONFIG.MAX_FISHES,
+            seaweedCount: CONFIG.MAX_SEAWEED,
+            coralCount: CONFIG.MAX_CORAL,
+            fogDensity: 0.009,
+            bloomStrength: CONFIG.BLOOM_ENABLED ? 0.18 : 0,
+            sunIntensity: 3.6,
             causticsEnabled: CONFIG.CAUSTICS_ENABLED,
             timeScale: 1,
-            showStats: true,
+            showStats: false,
             regenerate: () => generateWorld(),
-            pause: () => { isPaused = !isPaused; }
+            pause: () => { isPaused = !isPaused; oceanUI?.syncPause(); }
         };
 
         async function init() {
@@ -2016,11 +1985,12 @@
                 
                 const canvas = document.getElementById('sea3dCanvas');
                 scene = new THREE.Scene();
-                scene.fog = new THREE.FogExp2(0x001525, params.fogDensity);
+                scene.fog = new THREE.FogExp2(0x247b89, params.fogDensity);
+                scene.background = new THREE.Color(0x247b89);
                 
                 // 相机设置
-                camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 500);
-                camera.position.set(70, 30, 70);
+                camera = new THREE.PerspectiveCamera(52, window.innerWidth / window.innerHeight, 0.1, 500);
+                camera.position.set(38, -7, 48);
                 
                 // 渲染器设置
                 renderer = new THREE.WebGLRenderer({ 
@@ -2030,18 +2000,21 @@
                     alpha: false
                 });
                 renderer.setSize(window.innerWidth, window.innerHeight);
-                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio, configManager.currentTier === 'low' ? 1 : 1.5));
+                renderer.outputColorSpace = THREE.SRGBColorSpace;
                 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-                renderer.toneMappingExposure = 1.0;
+                renderer.toneMappingExposure = 1.12;
                 renderer.shadowMap.enabled = true;
                 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                renderer.info.autoReset = false;
                 
                 // 控制器
                 controls = new OrbitControls(camera, renderer.domElement);
-                controls.target.set(0, -12, 0);
-                controls.minDistance = 10;
-                controls.maxDistance = 200;
-                controls.maxPolarAngle = Math.PI / 2.02;
+                controls.target.set(0, -21, -9);
+                controls.minDistance = 12;
+                controls.maxDistance = 110;
+                controls.minPolarAngle = Math.PI * 0.28;
+                controls.maxPolarAngle = Math.PI * 0.57;
                 controls.enableDamping = true;
                 controls.dampingFactor = 0.05;
                 
@@ -2056,6 +2029,10 @@
                 
                 // GUI
                 setupGUI();
+                oceanUI = setupOceanUI({
+                    scene, camera, controls, gui, uniforms: reefUniforms, params,
+                    setPaused: value => { isPaused = value; }, getPaused: () => isPaused
+                });
                 
                 // 事件监听
                 setupEventListeners();
@@ -2071,8 +2048,8 @@
 
         function setupLighting() {
             // 主光源（模拟阳光穿透水面）
-            const sunLight = new THREE.DirectionalLight(0x66aaff, params.sunIntensity);
-            sunLight.position.set(60, 150, 40);
+            const sunLight = new THREE.DirectionalLight(0xfff1c9, params.sunIntensity);
+            sunLight.position.set(-35, 75, 20);
             sunLight.castShadow = true;
             sunLight.shadow.mapSize.set(CONFIG.SHADOW_MAP_SIZE, CONFIG.SHADOW_MAP_SIZE);
             sunLight.shadow.camera.left = -100;
@@ -2087,12 +2064,12 @@
             scene.userData.sunLight = sunLight;
             
             // 环境光
-            const ambientLight = new THREE.AmbientLight(0x1a3a5a, 0.6);
+            const ambientLight = new THREE.HemisphereLight(0x9fded9, 0x466c78, 1.5);
             scene.add(ambientLight);
             scene.userData.ambientLight = ambientLight;
             
             // 体积光（上帝之光）
-            const godRay = new THREE.SpotLight(0x88ccff, 6, 250, Math.PI / 10, 0.6);
+            const godRay = new THREE.SpotLight(0xb6e5d4, 40, 150, Math.PI / 8, 0.9);
             godRay.position.set(0, 80, 0);
             godRay.target.position.set(0, -30, 0);
             scene.add(godRay);
@@ -2100,8 +2077,8 @@
             scene.userData.godRay = godRay;
             
             // 补光
-            const fillLight = new THREE.DirectionalLight(0x4488aa, 1);
-            fillLight.position.set(-50, 20, -50);
+            const fillLight = new THREE.DirectionalLight(0x8bd6e0, 1.3);
+            fillLight.position.set(40, 10, -45);
             scene.add(fillLight);
         }
 
@@ -2125,13 +2102,18 @@
             }
             
             // 水下效果
-            const underwaterPass = new ShaderPass(AdvancedUnderwaterShader);
+                const underwaterPass = new ShaderPass(AdvancedUnderwaterShader);
             underwaterPass.uniforms.causticsEnabled.value = CONFIG.CAUSTICS_ENABLED;
             composer.addPass(underwaterPass);
             scene.userData.underwaterPass = underwaterPass;
+            composer.addPass(new OutputPass());
         }
 
         async function generateWorld() {
+            if (generating) return;
+            generating = true;
+            loadingManager.loadingEl.classList.remove('hidden');
+            try {
             loadingManager.setStage(1);
             
             // 清理旧资源
@@ -2144,6 +2126,10 @@
             if (particles) particles.dispose();
             if (seaweed) seaweed.dispose();
             if (corals) corals.dispose();
+            if (reefArt) reefArt.dispose();
+            params.fishCount = Math.min(params.fishCount, CONFIG.MAX_FISHES);
+            params.seaweedCount = Math.min(params.seaweedCount, CONFIG.MAX_SEAWEED);
+            params.coralCount = Math.min(params.coralCount, CONFIG.MAX_CORAL);
             
             terrainGen = new TerrainGenerator();
             
@@ -2171,6 +2157,7 @@
             await new Promise(r => setTimeout(r, 10));
             corals = new DiverseCoralSystem(scene, terrainGen, CONFIG);
             corals.generate(params.coralCount);
+            reefArt = decorateReef(scene, terrainGen, CONFIG, reefUniforms);
             loadingManager.updateProgress(1);
             
             // 创建粒子
@@ -2186,6 +2173,13 @@
             }
             
             loadingManager.complete();
+            updateEcoStatus();
+            } catch (error) {
+                console.error('世界生成错误:', error);
+                loadingManager.showError('世界生成失败: ' + error.message);
+            } finally {
+                generating = false;
+            }
         }
 
         function generateTerrain() {
@@ -2220,11 +2214,7 @@
             
             geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
             
-            const material = new THREE.MeshStandardMaterial({ 
-                vertexColors: true, 
-                roughness: 0.85,
-                metalness: 0.05
-            });
+            const material = createTerrainMaterial(reefUniforms);
             
             const terrain = new THREE.Mesh(geometry, material);
             terrain.receiveShadow = true;
@@ -2234,17 +2224,23 @@
         }
 
         function createWater() {
-            const waterGeometry = new THREE.PlaneGeometry(300, 300, 64, 64);
-            const waterMaterial = new THREE.MeshPhysicalMaterial({
-                color: 0x006699,
-                roughness: 0.02,
-                metalness: 0.1,
-                transmission: 0.92,
-                thickness: 4,
-                ior: 1.33,
-                transparent: true,
-                opacity: 0.75,
-                side: THREE.DoubleSide
+            const waterGeometry = new THREE.PlaneGeometry(350, 350, 32, 32);
+            const waterMaterial = new THREE.ShaderMaterial({
+                uniforms: { time: reefUniforms.time, rayStrength: reefUniforms.ray },
+                transparent: true, depthWrite: false, side: THREE.DoubleSide,
+                vertexShader: `uniform float time; varying vec2 vWater;
+                    void main() {
+                        vWater = position.xy;
+                        vec3 surface = position;
+                        surface.z += sin(surface.x * 0.1 + time * 0.5) * 0.25;
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(surface, 1.0);
+                    }`,
+                fragmentShader: `uniform float time; uniform float rayStrength; varying vec2 vWater;
+                    void main() {
+                        float wave = sin(vWater.x * 0.24 + sin(vWater.y * 0.19 + time * 0.4)) * sin(vWater.y * 0.27 - time * 0.3);
+                        float shimmer = pow(1.0 - abs(wave), 12.0);
+                        gl_FragColor = vec4(vec3(0.48, 0.84, 0.79) * rayStrength, (0.025 + shimmer * 0.055) * rayStrength);
+                    }`
             });
             
             water = new THREE.Mesh(waterGeometry, waterMaterial);
@@ -2254,7 +2250,7 @@
         }
 
         function setupGUI() {
-            const gui = new GUI({ title: '🌊 生态系统控制面板' });
+            gui = new GUI({ title: '潮汐实验室 · 生态与画质' });
             
             const worldFolder = gui.addFolder('🌍 世界设置');
             worldFolder.add(params, 'regenerate').name('🔄 重新生成世界');
@@ -2266,14 +2262,14 @@
                 .name('🐟 鱼群数量')
                 .onChange(v => fishSchool.createSchool(v));
             creatureFolder.add(params, 'seaweedCount', 20, CONFIG.MAX_SEAWEED, 5)
-                .name('🌿 海草数量')
+                .name('🌿 海草密度')
                 .onChange(v => seaweed.generate(v));
             creatureFolder.add(params, 'coralCount', 5, CONFIG.MAX_CORAL, 1)
-                .name('🪸 珊瑚数量')
+                .name('🪸 珊瑚密度')
                 .onChange(v => corals.generate(v));
             
             const visualFolder = gui.addFolder('👁️ 视觉效果');
-            visualFolder.add(params, 'fogDensity', 0.005, 0.04)
+            visualFolder.add(params, 'fogDensity', 0.002, 0.025)
                 .name('🌫️ 雾气浓度')
                 .onChange(v => scene.fog.density = v);
             visualFolder.add(params, 'bloomStrength', 0, 1)
@@ -2320,18 +2316,16 @@
             });
             
             // 键盘控制
-            window.addEventListener('keydown', (e) => {
-                if (e.code === 'Space') {
-                    isPaused = !isPaused;
-                }
-            });
-            
             // 鼠标交互 - 点击鱼群
             const raycaster = new THREE.Raycaster();
             const mouse = new THREE.Vector2();
             
-            window.addEventListener('click', (e) => {
-                if (e.target.closest('.lil-gui')) return;
+            let pointerStart = null;
+            renderer.domElement.addEventListener('pointerdown', event => {
+                pointerStart = { x: event.clientX, y: event.clientY };
+            });
+            renderer.domElement.addEventListener('click', (e) => {
+                if (!pointerStart || Math.hypot(e.clientX - pointerStart.x, e.clientY - pointerStart.y) > 6) return;
                 
                 mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
                 mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
@@ -2340,11 +2334,12 @@
                 
                 // 创建交互点
                 const targetPoint = new THREE.Vector3();
-                const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-                raycaster.ray.intersectPlane(plane, targetPoint);
+                const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 16);
+                const hit = raycaster.ray.intersectPlane(plane, targetPoint);
                 
-                if (targetPoint && fishSchool) {
+                if (hit && fishSchool) {
                     fishSchool.addFleeTarget(targetPoint);
+                    reefArt?.pulse(targetPoint, camera, simulationTime);
                 }
             });
             
@@ -2367,7 +2362,7 @@
             }
             if (frameTimeEl) frameTimeEl.textContent = perfMonitor.frameTime.toFixed(2) + 'ms';
             if (fishCountEl) fishCountEl.textContent = fishSchool ? fishSchool.fishes.length : 0;
-            if (drawCallsEl) drawCallsEl.textContent = renderer.info.render.calls;
+            if (drawCallsEl) drawCallsEl.textContent = perfMonitor.stats.drawCalls;
             if (qualityEl) qualityEl.textContent = configManager.getQualityLabel();
         }
 
@@ -2386,7 +2381,7 @@
                 ecoFill.style.width = health + '%';
                 
                 let status = '健康';
-                let color = '#44aa66';
+                let color = '#dce3ac';
                 if (health < 40) {
                     status = '濒危';
                     color = '#ff6666';
@@ -2403,25 +2398,38 @@
         function animate() {
             requestAnimationFrame(animate);
             
-            if (isPaused) return;
-            
-            const delta = clock.getDelta() * params.timeScale;
-            const time = clock.getElapsedTime();
+            const realDelta = Math.min(clock.getDelta(), 0.05);
+            const delta = isPaused ? 0 : realDelta * params.timeScale;
+            simulationTime += delta;
+            const time = simulationTime;
+            reefUniforms.time.value = time;
             
             // 性能监控
             const perfStatus = perfMonitor.update();
             if (perfStatus === 'downgrade' && perfMonitor.adaptiveQuality) {
                 if (configManager.downgrade()) {
                     console.log('性能不足，降级到:', configManager.currentTier);
+                    perfMonitor.consecutiveLowFrames = 0;
+                    renderer.setPixelRatio(Math.min(window.devicePixelRatio, configManager.currentTier === 'low' ? 1 : 1.5));
+                    if (scene.userData.bloomPass) scene.userData.bloomPass.enabled = CONFIG.BLOOM_ENABLED;
+                    scene.userData.sunLight.shadow.mapSize.set(CONFIG.SHADOW_MAP_SIZE, CONFIG.SHADOW_MAP_SIZE);
+                    if (scene.userData.sunLight.shadow.map) {
+                        scene.userData.sunLight.shadow.map.dispose();
+                        scene.userData.sunLight.shadow.map = null;
+                    }
                     generateWorld();
                 }
             }
-            perfMonitor.updateStats(renderer);
             
             // 更新系统
-            if (fishSchool) fishSchool.update(delta, time);
-            if (particles) particles.update(time, delta);
-            if (seaweed) seaweed.update(time);
+            if (!isPaused && !generating) {
+                if (fishSchool) fishSchool.update(delta, time);
+                if (particles) particles.update(time, delta);
+                if (seaweed) seaweed.update(time);
+            }
+            if (reefArt) reefArt.update(time);
+            if (oceanUI) oceanUI.update(realDelta, renderer);
+            if (corals) corals.corals.forEach(coral => { coral.material.emissiveIntensity = reefUniforms.glow.value; });
             
             // 动态光照
             if (scene.userData.godRay) {
@@ -2440,7 +2448,9 @@
             }
             
             controls.update();
+            renderer.info.reset();
             composer.render();
+            perfMonitor.updateStats(renderer);
             
             // 定期更新生态状态
             if (Math.floor(time) % 5 === 0) {

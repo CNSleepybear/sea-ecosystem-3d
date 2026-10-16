@@ -1,0 +1,108 @@
+:root {
+    --ink: #f2f5e9;
+    --muted: #b7d3cf;
+    --accent: #dce3ac;
+    --line: rgba(205, 237, 218, .23);
+    --glass: rgba(7, 37, 46, .73);
+    --serif: "Palatino Linotype", "Songti SC", "SimSun", serif;
+    --sans: "Segoe UI", "Microsoft YaHei", sans-serif;
+}
+body { font-family: var(--sans); background: #063c57; color: var(--ink); }
+button { font: inherit; }
+button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 5px; }
+#info {
+    top: 32px; left: 38px; max-width: 340px; padding: 0;
+    background: none; border: none; border-radius: 0; backdrop-filter: none;
+    text-shadow: 0 2px 16px rgba(0, 31, 43, .55);
+}
+#info:hover { background: none; border: none; }
+.eyebrow { font-size: 10px; letter-spacing: .28em; color: var(--accent); text-transform: uppercase; }
+#info h3 { display: block; margin: 10px 0 7px; font: 32px var(--serif); letter-spacing: .14em; color: var(--ink); }
+.location-line { color: var(--muted); font-size: 11px; letter-spacing: .12em; }
+.location-line::before { content: ""; display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); margin-right: 9px; vertical-align: 2px; }
+.ocean-tools { position: fixed; top: 32px; right: 34px; display: flex; gap: 8px; z-index: 120; }
+.tool-button {
+    color: var(--ink); background: rgba(8, 45, 54, .45); border: 1px solid var(--line);
+    border-radius: 50%; width: 42px; height: 42px; cursor: pointer;
+    display: grid; place-items: center; transition: background .2s, transform .2s; backdrop-filter: blur(10px);
+}
+.tool-button:hover { background: rgba(36, 82, 83, .8); transform: translateY(-2px); }
+.tool-button[aria-pressed="true"], .tool-button[aria-expanded="true"] { color: var(--accent); border-color: var(--accent); }
+.tool-button svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+#eco-status {
+    left: 38px; bottom: 34px; padding: 0; border: none; border-radius: 0;
+    background: none; backdrop-filter: none; color: var(--ink); min-width: 170px;
+    text-shadow: 0 1px 4px #063340, 0 2px 12px #063340;
+}
+#eco-status .eco-title { font-size: 10px; font-weight: 400; letter-spacing: .16em; color: var(--ink); margin-bottom: 9px; }
+#eco-status .eco-bar { width: 155px; height: 2px; background: rgba(219, 237, 224, .2); }
+#eco-status .eco-fill { background: var(--accent); }
+#eco-status .eco-value { margin-top: 9px; text-align: left; font-size: 11px; color: var(--ink); }
+.biome-nav { position: fixed; bottom: 34px; right: 34px; display: flex; gap: 6px; z-index: 100; }
+.biome-button {
+    padding: 10px 16px; border: 1px solid transparent; border-radius: 3px;
+    background: rgba(6, 37, 48, .46); color: var(--muted); font-size: 11px; letter-spacing: .08em;
+    cursor: pointer; backdrop-filter: blur(12px); transition: background .2s, color .2s;
+}
+.biome-button:hover { color: var(--ink); background: rgba(29, 77, 83, .7); }
+.biome-button[aria-pressed="true"] { border-color: var(--line); color: var(--accent); background: rgba(24, 69, 74, .7); }
+.biome-button small { font-size: 9px; opacity: .6; margin-right: 7px; }
+.controls-hint { position: fixed; bottom: 38px; left: 50%; transform: translateX(-50%); color: var(--ink); text-shadow: 0 1px 4px #063340, 0 2px 12px #063340; font-size: 10px; letter-spacing: .12em; z-index: 90; pointer-events: none; transition: opacity 1s; }
+.controls-hint.faded { opacity: 0; }
+#performance {
+    display: none; top: 92px; right: 34px; bottom: auto; min-width: 230px;
+    border-color: var(--line); background: var(--glass); border-radius: 6px;
+    padding: 18px; font-family: var(--sans);
+}
+#performance.visible { display: block; }
+#performance .metric { margin: 9px 0; }
+#performance .metric-label { color: var(--muted); }
+#performance .metric-value { color: var(--accent); }
+.lil-gui.root {
+    --background-color: rgba(8, 37, 46, .94); --text-color: #d3e8dd; --title-background-color: #143c45;
+    --widget-color: #244b52; --hover-color: #315d62; --focus-color: #3c7371; --number-color: #dbdfa9; --string-color: #dbdfa9;
+    position: fixed; top: 92px; right: 34px; border: 1px solid var(--line);
+    border-radius: 6px; overflow: hidden; z-index: 125; width: 280px;
+}
+.field-guide {
+    position: fixed; right: 34px; top: 92px; width: 290px; z-index: 110;
+    padding: 24px; border: 1px solid var(--line); border-radius: 6px; background: var(--glass); backdrop-filter: blur(20px);
+}
+.field-guide[hidden] { display: none; }
+.field-guide h2 { font: 22px var(--serif); letter-spacing: .1em; margin: 8px 0 16px; }
+.field-guide p { font-size: 12px; line-height: 1.9; color: var(--muted); }
+.guide-species { display: flex; justify-content: space-between; padding: 11px 0; border-top: 1px solid var(--line); font-size: 12px; }
+.guide-species span { color: var(--muted); font-size: 10px; }
+.field-guide details { margin-top: 18px; font-size: 11px; color: var(--muted); }
+.field-guide summary { cursor: pointer; color: var(--accent); margin-bottom: 8px; }
+.field-guide kbd { color: var(--ink); font: 10px var(--sans); }
+.photo-note { display: none; position: fixed; bottom: 24px; width: 100%; text-align: center; font-size: 11px; letter-spacing: .12em; color: var(--ink); z-index: 100; pointer-events: none; }
+body.photo-mode #info, body.photo-mode .ocean-tools, body.photo-mode #eco-status, body.photo-mode .biome-nav,
+body.photo-mode #performance, body.photo-mode .field-guide, body.photo-mode .lil-gui, body.photo-mode .controls-hint { visibility: hidden; }
+body.photo-mode .photo-note { display: block; }
+#loading { background: radial-gradient(ellipse at 50% 25%, #205c65, #052b3e 70%); transition: opacity .8s; }
+#loading .spinner { border-top-color: var(--accent); border-width: 1px; }
+#loading .spinner:nth-child(2), #loading .spinner:nth-child(3) { border-top-color: #83bcb7; }
+#loading .loading-text { color: var(--ink); font: 25px var(--serif); letter-spacing: .2em; }
+#loading .loading-progress { width: 200px; height: 2px; background: var(--line); }
+#loading .loading-bar { background: var(--accent); }
+#loading .loading-status { color: var(--muted); font-size: 11px; }
+@media (max-width: 900px) { .controls-hint { display: none; } }
+@media (max-width: 600px) {
+    #info { left: 20px; top: 24px; max-width: 210px; padding: 0; }
+    #info h3 { font-size: 25px; }
+    .eyebrow { font-size: 8px; letter-spacing: .17em; }
+    .location-line { font-size: 9px; }
+    .ocean-tools { top: auto; right: 18px; bottom: calc(82px + env(safe-area-inset-bottom)); flex-direction: column; gap: 7px; }
+    .tool-button { width: 36px; height: 36px; }
+    #eco-status { left: 20px; bottom: calc(85px + env(safe-area-inset-bottom)); padding: 0; min-width: 140px; }
+    .biome-nav { left: 20px; right: 20px; bottom: calc(24px + env(safe-area-inset-bottom)); }
+    .biome-button { flex: 1; padding: 11px 5px; text-align: center; font-size: 10px; }
+    .biome-button small { display: none; }
+    .field-guide, #performance, .lil-gui.root { right: 64px; top: auto; bottom: calc(80px + env(safe-area-inset-bottom)); max-width: calc(100vw - 84px); }
+    .field-guide { padding: 18px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition: none !important; }
+    #loading .spinner { animation: none; }
+}

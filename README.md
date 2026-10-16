@@ -1,9 +1,24 @@
-# 🌊 深海生态系统 3D 模拟器
+# 🌊 潮汐之间 · 海底生态漫游
 [![Live Demo](https://img.shields.io/badge/Live-Demo-brightgreen?style=for-the-badge&logo=github)](https://CNSleepybear.github.io/sea-ecosystem-3d/)
 [![Three.js](https://img.shields.io/badge/Three.js-r162-blue?style=for-the-badge&logo=threedotjs)](https://threejs.org/)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
 
 一个基于 WebGL 的高性能 3D 海底生态系统模拟器，使用 Three.js 构建，支持实时光照、粒子系统和基于 Boids 算法的智能鱼群 AI。
+
+## 🎨 美术升级
+
+以《ABZÛ》的通透色彩、宁静群游和《Subnautica》的礁区纵深作为风格参考，不使用或复制原游戏素材。所有新增模型与材质均由代码程序化生成。
+
+- **礁谷构图**：蜿蜒沙地、分区珊瑚群落、风化岩石、天然石拱与散落海星。
+- **生物轮廓**：带眼睛、背鳍、胸鳍和叉尾的条纹礁鱼，GPU 尾摆；新增巡游蝠鲼与海龟。
+- **水下光学**：暖色日光、冷色补光、景深雾、空间光束、贴附地形的动态焦散、细沙纹理和水面微光。
+- **三种氛围**：日光礁谷、暮色海湾、荧光深蓝，可即时切换；氛围切换不重建世界。
+- **轻量界面**：海洋手记、画质设置和渲染统计默认收起，支持自动环游与纯净观景。
+- **性能控制**：鱼群、海草与珊瑚采用实例化；低配置降低数量、像素比、阴影分辨率与泛光。
+
+这是风格化生态观景模拟：蝠鲼与海龟为程序化造型和循环巡游，三种氛围是艺术光影预设，并非真实海洋深度或昼夜生态模型。
+
+旧版 `demo.gif` 保留用于展示原始模拟功能，画面以新截图及在线版本为准。
 
 ![项目截图](screenshot.png)
 ![海底生态系统演示](demo.gif)
@@ -48,7 +63,12 @@
 | 🖱️ 右键拖拽 | 平移视角 |
 | 👆 点击水面 | 惊吓附近的鱼群 |
 | ⌨️ 空格键 | 暂停 / 继续 |
-| 👁️ 实时面板 | 查看 FPS、生物数量、系统健康度 |
+| ⌨️ P / Esc | 进入纯净观景 / 返回；手机可双击返回 |
+| ⌨️ R / 双击 | 重置视角 |
+| 🧭 罗盘按钮 | 开启 / 关闭缓慢环游 |
+| 📖 手记按钮 | 查看物种与操作提示 |
+| 👁️ 统计按钮 | 展开 FPS、生物数量、渲染数据 |
+| 🎨 右下角氛围 | 日光 / 暮色 / 荧光切换 |
 
 ---
 
@@ -93,12 +113,14 @@ open http://localhost:8000
 ## 📁 项目结构
 ```
 sea-ecosystem-3d/
-├── index.html       # 主程序文件（整合 HTML/CSS/JS）
+├── index.html       # 模拟系统、渲染入口与页面结构
+├── ocean-art.js     # 程序化生物、珊瑚、礁区与材质
+├── ocean-ui.js      # 漫游工具、氛围与界面交互
+├── ocean-ui.css     # 海洋主题与移动端布局
 ├── README.md        # 项目说明文档
 ├── LICENSE          # 开源许可证
-└── docs/            # 文档与资源文件
-    ├── demo.gif     # 项目动态演示图
-    └── screenshot.png # 项目静态预览图
+├── demo.gif         # 原版动态演示
+└── screenshot.png   # 升级后的场景预览
 ```
 
 ---
@@ -116,7 +138,7 @@ sea-ecosystem-3d/
 ---
 
 ## 🖥️ 性能监控
-界面右上角实时展示系统运行状态，包含以下核心指标：
+点击右上角统计按钮展开系统运行状态，包含以下核心指标：
 - **FPS**：当前渲染帧率
 - **帧时间**：单帧渲染耗时（ms）
 - **鱼群数量**：当前场景活跃鱼群总数
@@ -150,12 +172,12 @@ pos.x += sway * bendFactor; // 基于顶点高度调整摆动幅度（顶部摆�
 ```javascript
 // 场景核心配置参数
 const params = {
-    fishCount: 80,        // 初始鱼群数量 (推荐：10-120)
-    seaweedCount: 150,    // 海草生成数量 (推荐：20-200)
-    coralCount: 40,       // 珊瑚生成数量 (推荐：5-60)
-    fogDensity: 0.012,    // 水下雾气浓度 (值越大视野越近)
-    bloomStrength: 0.35,  // 泛光特效强度 (0-1)
-    sunIntensity: 4,      // 阳光/体积光强度 (1-10)
+    fishCount: 80,        // 初始鱼群数量，按设备等级选择
+    seaweedCount: 150,    // 海草密度，实际生成 3 倍叶片
+    coralCount: 40,       // 珊瑚密度，实际生成约 3 倍个体
+    fogDensity: 0.009,    // 水下雾气浓度 (值越大视野越近)
+    bloomStrength: 0.18,  // 泛光特效强度 (0-1)
+    sunIntensity: 3.6,    // 阳光强度 (1-8)
     timeScale: 1          // 场景时间流速 (0.5-2，1为正常速度)
 };
 ```
